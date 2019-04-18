@@ -1,0 +1,21 @@
+project: bhcottman/lesson.1
+
+name: lesson 1
+model-methods: [log,parameters,save,load,read,write,train,predict,inverse-predict]
+function-methods: [log,parameters,read,write,transform]
+
+# Data Paths
+train__path: /Users/brucecottman/Documents/Kaggle/08222018.open-solution-salt-detection/input/train/images
+valid_path: /Users/brucecottman/Documents/Kaggle/08222018.open-solution-salt-detection/input/images
+test_path: /Users/brucecottman/Documents/Kaggle/08222018.open-solution-salt-detection/input/train/masks
+models_path:  /Users/brucecottman/Documents/Kaggle/08222018.open-solution-salt-detection/input/depths.csv
+tmp_path: /Users/brucecottman/Documents/Kaggle/08222018.open-solution-salt-detection/input/submissions
+
+# Executioon
+cpu_n: 12
+threads_n: 24
+gpu_n: 2
+
+cv_n: 5
+shuffle: 1
+
