@@ -1,10 +1,10 @@
 # paso changelog
 
-## 0.2.1.alpha
+## 0.1.5 alpha
 - reran all tests
 - created package at pypi
 
-## 0.2.0
+## 0.1.2
 
 2019-04-10
 
@@ -13,7 +13,7 @@
 - decorator class pasoDecorators
 - decorator TransformWrap
 
-## 0.1.0
+## 0.1.1
 
 2018-01-10
 
