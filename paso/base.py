@@ -40,6 +40,7 @@ from pandas.core.dtypes.common import (
 import dask.dataframe as pdd
 import multiprocessing as mp
 import timeit, random, math
+from tqdm import tqdm
 
 #
 import warnings
@@ -47,6 +48,7 @@ import warnings
 warnings.filterwarnings("ignore")
 # paso imports
 # from paso.base import pasoFunction, pasoLine,get_paso_log
+
 
 
 def _Check_No_NA_F_Values(df, feature):
@@ -79,7 +81,7 @@ class pasoDecorators:
             object = args[0]
             if len(args) < 2:
                 raise pasoError(
-                    "TransformWrap:Must be at keast two arguments: ", args, kwargs
+                    "TransformWrap:Must be at least two arguments: ", args, kwargs
                 )
             else:
                 Xarg = args[1]
@@ -114,13 +116,88 @@ class pasoDecorators:
             # pre
             fun(object, X, **kwargs)
             # post
-            if object.cache:
-                object.f_x = X
+            object.f_x = X
             object.transformed = True
             return X
-
         return wrapper
 
+    def TrainWrap(array):
+        def decorator(fun):
+            # i suppose i could of done @wraos for self, but this works
+            def wrapper(*args, **kwargs):
+                object = args[0]
+                if len(args) < 2:
+                    raise pasoError(
+                        "TransformWrap:Must be at least two arguments (self,X): ", args, kwargs
+                    )
+                else:
+                    Xarg = args[1]
+                # must be dataFrame
+                if is_DataFrame(Xarg):
+                    pass
+                else:
+                    raise pasoError(
+                        "TrainWrap:Xarg must be if type DataFrame. Was type:{}",
+                        format(type(Xarg)),
+                    )
+                _Check_No_NA_Values(Xarg)
+                # pre
+                if array:
+                    fun(object, Xarg.to_numpy(), **kwargs)
+                else:
+                    fun(object, Xarg, **kwargs)
+                # post
+                object.trained = True
+                return object # returnes self
+            return wrapper
+        return decorator
+
+    def PredictWrap(array):
+        def decorator(fun):
+        # i suppose i could of done @wraos for self, but this works
+            def wrapper(*args, **kwargs):
+                object = args[0]
+                if len(args) < 2:
+                    raise pasoError(
+                        "PredictWrap:Must be at least two arguments: ", args, kwargs
+                    )
+                else:
+                    Xarg = args[1]
+                if object.trained == False:
+                    raise pasoError(
+                        "PredictWrap:Must call train before predict.", args, kwargs
+                    )
+                object.inplace = False
+                kwa = "inplace"
+                if kwa in kwargs:
+                    object.inplace = kwargs[kwa]
+                    validate_bool_kwarg(object.inplace, kwa)
+                # must be dataFrame
+                if is_DataFrame(Xarg):
+                    pass
+                else:
+                    raise pasoError(
+                        "TransformWrap:Xarg must be if type DataFrame. Was type:{}",
+                        format(type(Xarg)),
+                    )
+                # cached . dont'caclulate again
+                if object.cache and object.predicted:
+                    return object.f_x
+                else:
+                    pass
+                _Check_No_NA_Values(Xarg)
+                if array:
+                    object.f_x = pd.DataFrame(fun(object, Xarg.to_numpy(copy=True), **kwargs)
+                                              , columns=Xarg.columns, copy=False)
+                else:
+                    object.f_x = fun(object, Xarg, **kwargs)
+
+                Xarg =  object.f_x
+                # post
+                object.predicted = True
+                return object.f_x
+            return wrapper
+        return decorator
 
 class pasoBase(ABC):
     """
@@ -412,12 +489,6 @@ class pasoModel(pasoBase):
             if filepath != "":
                 self.model_persisted = True
                 self.save_model_file_name = filepath
-                if not os.path.exists(self.save_model_file_name):
-                    raise NameError(
-                        "save model:The file does not exist:{}".format(
-                            self.save_model_file_name
-                        )
-                    )
                 self.model.save(self.save_model_file_name)
                 return self
             else:
@@ -440,19 +511,11 @@ class pasoModel(pasoBase):
         Raises:
             pasoError(\"Model:write must have non-blank filename.\")
 
-            pasoError(\"Must write f_x before read.\"  )
-
         """
         if self.trained and self.predicted:
             if filepath != "":
                 self.persisted = True
                 self.save_file_name = filepath
-                if not os.path.exists(self.save_file_name):
-                    raise NameError(
-                        "write f(x)l:The file does not exist:{}".format(
-                            self.save_file_name
-                        )
-                    )
                 self.f_x.to_parquet(filepath)
                 return True
             else:
@@ -479,7 +542,7 @@ class pasoModel(pasoBase):
             self.save_file_name = filepath
         if not os.path.exists(self.save_file_name):
             raise NameError(
-                "read f(x)l:The file does not exist:{}".format(self.save_file_name)
+                "read f(x):The file does not exist:{}".format(self.save_file_name)
             )
         if self.persisted:
             self.f_x = pd.read_parquet(self.save_file_name)
@@ -740,7 +803,6 @@ def _set_paso_in_pipe(f_name, f_shape="circle", f_label=""):
 
 class pasoLine:
     """
-    paso version of apipline: Iniates:
         1. Log: default name paso
         2. parameter file : default: '../../lessons/parameters/default.yaml'
         3. list of pasoes invoked.
@@ -1025,13 +1087,18 @@ class toDataFrame(pasoFunction):
 def _time_required(func):
     timerr = timeit.default_timer
     x = timerr()
-    for i in range(10):
-        func()
+    for i in range(10): func()
     y = timerr()
-    return y - x
+    return(y - x)
 
+def _time_required_dask(func):
+    timerr = timeit.default_timer
+    x = timerr()
+    for i in range(10): func().compute()
+    y = timerr()
+    return(y - x)
 
-def dask_pandas_ratio():
+def dask_pandas_startup_ratio(magnitude=1):
     """
     dask_cost calulates the ratio of dask dataframe - pandas
     dataframe in wall clock time. On a single CPU the ratio is 1.0.
@@ -1040,83 +1107,122 @@ def dask_pandas_ratio():
     the more elements per benchmark dataframe.
 
     Parameters:
-        None
+        Nome
 
     Returns:
-        None
+        pandas dataframe
 
     Example:
         >>> (On 12-CPU MacPro)
         >>> dask_pandas_ratio()
     """
-    import dask.dataframe as pdd
-    from sklearn.datasets import load_boston
 
+    from sklearn.datasets import load_boston
+    import dask.dataframe as pdd
     boston = load_boston()
     City = pd.DataFrame(boston.data, columns=boston.feature_names)
 
-    c = []
-    m = []
-    scaleup = 1, 10, 100, 1000, 10000  # ,10000
-    for scale in scaleup:
-        bcl = [City for i in range(int(1.5 * scale))]
-        bc = pd.concat(bcl, axis=0)
-        bc.shape, bc.shape[0] * bc.shape[1]
+    c = []; m = []
+    for power in tqdm(range(magnitude)):
+        scale = 10**power
+        bc = pd.concat([City for i in range(int(1.5 * scale))], axis=0)
+        print(type(bc),bc.shape, bc.shape[0] * bc.shape[1])
         N = mp.cpu_count()  # theads on this machine
         bcd = pdd.from_pandas(bc, npartitions=N)
 
         t1 = _time_required(bc.count)
         t2 = _time_required(bcd.count)
-        c.append(
-            (
-                "count",
-                round(math.log10(bc.shape[0] * bc.shape[1]), 0),
-                t1,
-                t2,
-                (round(t1 / t2, 2)),
-            )
-        )
+        c.append(('count'
+                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
+                  , t1, t2, (round(t1 / t2, 2))))
 
         t1 = _time_required(bc.sum)
         t2 = _time_required(bcd.sum)
-        c.append(
-            (
-                "sum",
-                round(math.log10(bc.shape[0] * bc.shape[1]), 0),
-                t1,
-                t2,
-                (round(t1 / t2, 2)),
-            )
-        )
+        c.append(('sum'
+                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
+                  , t1, t2, (round(t1 / t2, 2))))
 
         t1 = _time_required(bc.mean)
         t2 = _time_required(bcd.mean)
-        c.append(
-            (
-                "mean",
-                round(math.log10(bc.shape[0] * bc.shape[1]), 0),
-                t1,
-                t2,
-                (round(t1 / t2, 2)),
-            )
-        )
+        c.append(('mean'
+                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
+                  , t1, t2, (round(t1 / t2, 2))))
 
         t1 = _time_required(bc.isnull)
         t2 = _time_required(bcd.isnull)
-        c.append(
-            (
-                "isnull",
-                round(math.log10(bc.shape[0] * bc.shape[1]), 0),
-                t1,
-                t2,
-                (round(t1 / t2, 2)),
-            )
-        )
+        c.append(('isnull'
+                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
+                  , t1, t2, (round(t1 / t2, 2))))
 
-    df = pd.DataFrame(c)
-    ax = sns.lineplot(x=1, y=4, hue=0, data=df)
-    ax.set_yscale("log")
-    ax.set_xlabel("Number elements(log10)")
-    ax.set_ylabel("Ratio dask/pandas")
-    plt.plot([4, 8], [1, 1], c="black", linewidth=3)
+    df = pd.DataFrame(c,columns=['f()','log10(N)','t-pd(s)','t-dask(s)','t-pd/t-dask'])
+    ax = sns.lineplot(x='log10(N)', y='t-pd/t-dask', hue='f()', data=df)
+    ax.set_yscale('log')
+    ax.set_xlabel('Number elements(log10)')
+    ax.set_ylabel('Ratio dask/pandas')
+    plt.plot([4, 8], [1, 1], c='black', linewidth=3)
+    return df
+
+def dask_pandas_ratio(magnitude=4):
+    """
+    dask_cost calulates the ratio of dask dataframe - pandas
+    dataframe in wall clock time. On a single CPU the ratio is 1.0.
+    On a multiprocessor (usually 2 threads per CPU) the dask-pandas time
+    cost ratio grows larger (favorable to Dask)
+    the more elements per benchmark dataframe.
+
+    Parameters:
+        magnitude:  (int), default 4
+
+    Returns:
+        pandas dataframe
+
+    Example:
+        >>> (On 12-CPU MacPro)
+        >>> dask_pandas_ratio()
+    """
+
+    from sklearn.datasets import load_boston
+    import dask.dataframe as pdd
+    boston = load_boston()
+    City = pd.DataFrame(boston.data, columns=boston.feature_names)
+
+    c = []; m = []
+    for power in tqdm(range(magnitude)):
+#        print(power,10**power)
+        scale = 10**power
+        bc = pd.concat([City for i in range(int(1.5 * scale))], axis=0)
+#        print(type(bc),bc.shape, bc.shape[0] * bc.shape[1])
+        N = mp.cpu_count()  # theads on this machine
+        bcd = pdd.from_pandas(bc, npartitions=N)
+
+        t1 = _time_required(bc.count)
+        t2 = _time_required_dask(bcd.count)
+        c.append(('count'
+                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
+                  , t1, t2, (round(t1 / t2, 2))))
+
+        t1 = _time_required(bc.sum)
+        t2 = _time_required_dask(bcd.sum)
+        c.append(('sum'
+                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
+                  , t1, t2, (round(t1 / t2, 2))))
+
+        t1 = _time_required(bc.mean)
+        t2 = _time_required_dask(bcd.mean)
+        c.append(('mean'
+                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
+                  , t1, t2, (round(t1 / t2, 2))))
+
+        t1 = _time_required(bc.isnull)
+        t2 = _time_required_dask(bcd.isnull)
+        c.append(('isnull'
+                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
+                  , t1, t2, (round(t1 / t2, 2))))
+
+    df = pd.DataFrame(c,columns=['f()','log10(N)','t-pd(s)','t-dask(s)','t-pd/t-dask'])
+    ax = sns.lineplot(x='log10(N)', y='t-pd/t-dask', hue='f()', data=df)
+    ax.set_yscale('log')
+    ax.set_xlabel('Number elements(log10)')
+    ax.set_ylabel('Ratio dask/pandas')
+    plt.plot([4, 8], [1, 1], c='black', linewidth=3)
     return df

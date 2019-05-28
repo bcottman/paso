@@ -32,7 +32,7 @@ def Xboolean():
         [False, True, False],
         [True, 0, 0, ]
     ])
-    return  df
+    return df
 
 @pytest.fixture()
 def Xobject():
@@ -112,20 +112,20 @@ def z():
     return pd.DataFrame(X(),columns=[cn()])
 @pytest.fixture()
 def cn():
-    return ['integer_0','float_1','float_2']
+    return ['Z','k','T']
 @pytest.fixture()
 def cnv():
     return ['x','y','z']
 @pytest.fixture()
 def cno():
-    return ['integer_10', 'float_11', 'float_12']
+    return ['RA', 'B', 'C']
 @pytest.fixture()
 def df_type():
-    return pd.DataFrame(X(), columns=[cn()])
+    return pd.DataFrame(X(), columns=cn())
 @pytest.fixture()
 def df_typeDup():
     df =  pd.DataFrame(X(), columns=[cn()])
-    df['float_1'] = df['float_2'].values
+    df['floatO'] = df['floatT'].values
     return(df)
 @pytest.fixture()
 def df_typeo():

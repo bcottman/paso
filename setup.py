@@ -2,7 +2,7 @@ from setuptools import setup,find_packages
 
 setup(name='paso',
       packages=find_packages(),
-      version='0.2.7',
+      version='0.2.8',
       description='A python package for data wrangling for models.',
       long_description= """
 **paso** is a set of function and class method operations for data wrangling Machine
@@ -41,7 +41,7 @@ You can find a issue , or you can post a new issue, to work on. Next, or your al
 step, you need to set-up your local **paso** development environment. Code, Documentat
 """,
       url='https://github.com/bcottman/paso',
-      download_url='https://github.com/bcottman/paso/archive/0.2.7.tar.gz',
+      download_url='https://github.com/bcottman/paso/archive/0.2.8.tar.gz',
       author='Bruce Cottman',
       author_email='dr.bruce.cottman@gmail.com',
       keywords=['machine-learning', 'deep-learning', 'transformations', 'functional','data-analytics'],
