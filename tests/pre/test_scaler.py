@@ -20,21 +20,26 @@ def test_df_BoxCox_City_negative_error(df_City):
     g = scaler('BoxCoxScaler')
     with pytest.raises(ValueError):
         g.train(df_City)
+#2b
+def test_df_BoxCox_City_NA_error(df_small):
+    g = scaler('BoxCoxScaler')
+    with pytest.raises(pasoError):
+        g.train(df_small)
 #3
-def test_df_BoxCox_2d_numpy(X):
-    X = toDataFrame(X)
+def test_df_BoxCox_df_type(df_type):
     g = scaler('BoxCoxScaler')
-    g.train(X)
-    assert g.predict(X).shape == X.shape
+    assert g.train(df_type) == g
 #4
-def test_df_BoxCox_instance_1d(y):
+def test_df_BoxCox_numpy_1d_error(y):
     g = scaler('BoxCoxScaler')
-    assert g.train(y) == g
+    with pytest.raises(pasoError):
+        g.train(y)
 #5
-def test_df_BoxCox_1d_numpy(y):
+def test_predict_df_BoxCox_df_type(df_type):
     g = scaler('BoxCoxScaler')
-    g.train(y)
-    assert g.predict(y).squeeze().shape ==y.shape
+    g.train(df_type)
+    assert g.predict(df_type).shape == df_type.shape
+
 #6
 def test_df_BoxCox_type_error(ystr):
     g = scaler('BoxCoxScaler')
@@ -42,34 +47,28 @@ def test_df_BoxCox_type_error(ystr):
         g.train(ystr())
 # LambertScaler unit tests
 #7
-def test_df_Lambert_instance_2d(X):
+def test_df_Lambert_train(df_type):
     g = scaler('LambertScaler')
-    assert g.train(X) == g
+    assert g.train(df_type) == g
 #8
-def test_df_Lambert_2d_numpy(X):
+def test_df_Lambert_predict(df_type):
     g = scaler('LambertScaler')
-    g.train(X)
-    assert g.predict(X).shape == X.shape
+    g.train(df_type)
+    assert g.predict(df_type).shape == df_type.shape
 #9
-def test_df_Lambert_instance_1d(y):
+def test_df_Lambert_numpy_1d_error(y):
     g = scaler('LambertScaler')
-    assert g.train(y) == g
+    with pytest.raises(pasoError):
+        g.train(y)
 #10
-def test_df_Lambert_1d_numpy(y):
-    g = scaler('LambertScaler')
-    g.train(y)
-    assert g.predict(y).squeeze().shape == y.shape
+
 #11
-g = scaler('LambertScaler')
 def test_df_Lambert_type_error(ystr):
     g = scaler('LambertScaler')
-    with pytest.raises(TypeError):
+    with pytest.raises(pasoError):
         g.train(ystr)
 #12
-def test_df_Lambert_zeroval_1d(yz):
-    g = scaler('LambertScaler')
-    g.train(yz)
-    assert g.predict(yz).squeeze().shape == yz.shape
+
 #13
 def test_df_Lambert_no_fit(yn):
     g = scaler('LambertScaler')
@@ -80,29 +79,46 @@ def test_scalerList(X):
     g = scaler('BoxCoxScaler')
     assert g.scalers() == ['StandardScaler', 'MinMaxScaler', 'Normalizer', 'MaxAbsScaler', 'RobustScaler', 'QuantileTransformer', 'BoxCoxScaler', 'LambertScaler']
 #15
-def test_df_BoxCox_inverse(y):
+def test_df_BoxCox_inverse(df_type):
     g = scaler('BoxCoxScaler')
-    z = g.train(y,inplace = False)
-    assert (g.inverse_predict(g.predict(y) == y).any())
+    g.train(df_type,inplace = False)
+    assert (g.inverse_predict(g.predict(df_type) == df_type).any().any())
 #16
-def test_df_Lambert_save(yn):
-    g = scaler('LambertScaler').reset().cacheOn()
-    g.train(yn).predict(yn)
+def test_df_BoxCox_write(df_type):
+    g = scaler('BoxCoxScaler').cacheOn()
+    g.train(df_type).predict(df_type)
     fp: str = 'tmp/df'
-    g.save(fp)
+    g.write(fp)
+    assert (g.trained and g.predicted  and g.cache and g.persisted and (g.save_model_file_name ==  fp)) == True
+def test_df_MinMax_write(df_type):
+    g = scaler('MinMaxScaler').cacheOn()
+    g.train(df_type).predict(df_type)
+    fp: str = 'tmp/df'
+    g.write(fp)
+    assert (g.trained and g.predicted  and g.cache and g.persisted and (g.save_model_file_name ==  fp)) == True
+def test_df_Lambert_write(df_type):
+    g = scaler('LambertScaler').cacheOn()
+    g.train(df_type).predict(df_type)
+    fp: str = 'tmp/df'
+    g.write(fp)
     assert (g.trained and g.predicted  and g.cache and g.persisted and (g.save_model_file_name ==  fp)) == True
 #17
-def test_df_Lambert_write(df_City):
-    g = scaler('LambertScaler').reset().cacheOn()
+def test_df_Lambert_wo(df_City):
+    g = scaler('LambertScaler').cacheOn()
     g.train(df_City).predict(df_City)
     fp: str = 'tmp/df_write'
     g.write(fp)
     assert (g.trained and g.predicted  and g.cache and g.persisted and (g.save_file_name == fp)) == True
 #18
-def test_df_Lambert_negval_1d(yn):
-    g = scaler('LambertScaler')
-    g.train(yn)
-    assert g.predict(yn).squeeze().shape == yn.shape
+def test_df_Lambert_read(df_City):
+    g = scaler('LambertScaler').cacheOn()
+    g.train(df_City).predict(df_City)
+    fp: str = 'tmp/df_write'
+    g.write(fp)
+    g.read(fp)
+    assert (g.trained and g.predicted  and g.cache and g.persisted and (g.save_file_name == fp)) == True
+#18
+
 #19
 def test_bad_scale_name():
     with pytest.raises(pasoError):

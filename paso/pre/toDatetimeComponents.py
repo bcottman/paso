@@ -83,7 +83,7 @@ class toDatetimeComponents(pasoFunction):
                 Xarg[features] = pd.datetimre(Xarg[feature])
 
         Parameters:
-            Xarg: ( pandas dataFrame)
+            Xarg: (pandas dataFrame)
                 If it is not a datetime64 series, it will be converted (if possible) to one with pd.to_datetime.
 
             inplace : (boolean) default: False

@@ -9,7 +9,6 @@ Welcome to blox
 
    nbdoc/intro
    nbdoc/Contributing
-   nbdoc/testdoc
    nbdoc/FAQ
    generated/modules.rst
 
