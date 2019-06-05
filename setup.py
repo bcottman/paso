@@ -2,7 +2,7 @@ from setuptools import setup,find_packages
 
 setup(name='paso',
       packages=find_packages(),
-      version='0.2.9',
+      version='0.3.0',
       description='A python package for data wrangling for models.',
       long_description= """
 **paso** is a set of function and class method operations for data wrangling Machine
