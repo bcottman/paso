@@ -4,15 +4,18 @@ warnings.filterwarnings("ignore")
 import pytest
 
 # paso imports
-from paso.base import pasoError
+from paso.base import pasoError,Paso
 from paso.pre.ContinuoustoCategory import ContinuoustoCategory
 
 #
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 
+session =  Paso().startup('../../parameters/default-lesson.1.yaml')
+
 # 1
 def test_ContinuoustoCategory_no_passed_arg_type_error(df_type_low_V11):
+
     g = ContinuoustoCategory()
     with pytest.raises(pasoError):
         g.transform()
@@ -25,8 +28,8 @@ def test_ContinuoustoCategory_passed_arg_type_error(df_type_low_V11):
 def test_ContinuoustoCategory_transform_City_float(df_City):
     g = ContinuoustoCategory()
     CityC = df_City.copy()
-    beforelen = len(CityC.columns)
-    assert ((g.transform(CityC,inplace=True) == CityC).all().all() and 2*beforelen == len(CityC.columns))
+    beforelen = 2*len(CityC.columns)
+    assert len(g.transform(CityC,inplace=True).columns) ==  beforelen
 # 4
 def test_ContinuoustoCategory_transform_City_ignore_integer(df_City):
     g = ContinuoustoCategory()
@@ -189,9 +192,9 @@ def test_ContinuoustoCategory_writeV11(df_type_low_V11):
         g.write(fp)
 
 # 19
-def test_ContinuoustoCategory_write_df_internet_traffic(df_city):
+def test_ContinuoustoCategory_write_df_internet_traffic(df_City):
     g = ContinuoustoCategory().reset().cacheOn()
-    g.transform(df_city, inplace=True)
+    g.transform(df_City, inplace=True)
     fp: str = "tmp/df"
     g.write(fp)
     assert g.transformed and g.cache and g.persisted and (g.save_file_name == fp)

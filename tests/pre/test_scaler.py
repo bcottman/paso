@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 # paso imports
 
-from paso.base import pasoFunction,pasoError,_Check_No_NA_Values,get_paso_log
-from paso.base import is_DataFrame,toDataFrame
+from paso.base import Paso,pasoError
 from paso.pre.scale import scaler
+session =  Paso().startup('../../parameters/default-lesson.1.yaml')
 #0
 def test_df_Class_init_NoArg():
     with pytest.raises(TypeError):
@@ -110,6 +110,22 @@ def test_df_Lambert_wo(df_City):
     g.write(fp)
     assert (g.trained and g.predicted  and g.cache and g.persisted and (g.save_file_name == fp)) == True
 #18
+def test_df_BoxCox_read(df_type):
+    g = scaler('BoxCoxScaler').cacheOn()
+    g.train(df_type).predict(df_type)
+    fp: str = 'tmp/df_write'
+    g.write(fp)
+    g.read(fp)
+    assert (g.trained and g.predicted  and g.cache and g.persisted and (g.save_file_name == fp)) == True
+
+def test_df_MinMax_read(df_City):
+    g = scaler('MinMaxScaler').cacheOn()
+    g.train(df_City).predict(df_City)
+    fp: str = 'tmp/df_write'
+    g.write(fp)
+    g.read(fp)
+    assert (g.trained and g.predicted and g.cache and g.persisted and (g.save_file_name == fp)) == True
+
 def test_df_Lambert_read(df_City):
     g = scaler('LambertScaler').cacheOn()
     g.train(df_City).predict(df_City)

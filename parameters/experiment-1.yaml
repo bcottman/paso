@@ -1,0 +1,16 @@
+project: Common Ground Soltions/jule
+
+
+# Execution HW Environment
+cpu_n: 12
+threads_n: 24
+gpu_n: 0
+
+Conv2D:
+  deep: True # a 2-layer conv2d, or false 1-layer conv2d in a block
+  block: 1
+  input_s: [100, 100, 3]
+  n_class: 10
+  dropout: [0.25,0.25]
+  optimizer: 'RMSprop'
+  loss: 'categorical_crossentropy'  #binary_crossentropy

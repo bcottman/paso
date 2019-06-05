@@ -125,7 +125,7 @@ def df_type():
 @pytest.fixture()
 def df_typeDup():
     df =  pd.DataFrame(X(), columns=[cn()])
-    df['floatO'] = df['floatT'].values
+    df['k'] = df['T'].values
     return(df)
 @pytest.fixture()
 def df_typeo():

@@ -9,14 +9,13 @@ from numba import jit
 from tqdm import tqdm
 
 # paso imports
-from paso.base import pasoFunction, pasoError, get_paso_log, pasoDecorators
-from paso.base import _Check_No_NA_Values, _Check_No_NA_F_Values
-from paso.base import is_DataFrame, toDataFrame
+from paso.base import pasoFunction, pasoDecorators
+from paso.base import  _Check_No_NA_F_Values
+
 
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 #
-LOGGER = get_paso_log()
 
 COMPONENT_DICT = {
     "Year": 100,
@@ -149,7 +148,7 @@ class toDatetimeComponents(pasoFunction):
                             Xarg[feature].dt, component.lower()
                         )  # ns to seconds
                     if self.verbose:
-                        LOGGER.info(
+                        logger.info(
                             "datetime feature component added: {}".format(
                                 fn + component
                             )
@@ -157,6 +156,6 @@ class toDatetimeComponents(pasoFunction):
                 if drop:
                     Xarg.drop(feature, axis=1, inplace=True)
                 if self.verbose:
-                    LOGGER.info("datetime feature dropped: {}".format(feature))
+                    logger.info("datetime feature dropped: {}".format(feature))
 
         return Xarg

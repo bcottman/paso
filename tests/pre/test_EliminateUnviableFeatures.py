@@ -6,11 +6,12 @@ warnings.filterwarnings("ignore")
 from tqdm import tqdm
 
 # paso imports
-from paso.base import pasoFunction,pasoError,_Check_No_NA_Values,get_paso_log,toDataFrame,is_DataFrame
+from paso.base import pasoError,Paso
 from paso.pre.EliminateUnviableFeatures import EliminateUnviableFeatures
 
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
+session =  Paso().startup('../../parameters/default-lesson.1.yaml')
 
 #1
 @pytest.mark.smoke

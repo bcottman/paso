@@ -4,23 +4,24 @@ __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 
 from abc import ABC
-
+''
 # todo: insert dask datatypes all over
-import logging
+from loguru import logger
 import pydot_ng as pydot
 from IPython.display import Image, display
 import sys, os
 import yaml
 from attrdict import AttrDict
 import numpy as np
-from numba import jit
-from sklearn.externals import joblib
 from matplotlib import pyplot as plt
 import seaborn as sns
-import copy
 import pandas as pd
 from pandas.core.dtypes.generic import ABCDataFrame, ABCIndexClass, ABCSeries
 from pandas.util._validators import validate_bool_kwarg
+import multiprocessing as mp
+import timeit, math
+from tqdm import tqdm
+
 from pandas.core.dtypes.common import (
     is_bool,
     is_categorical_dtype,
@@ -37,19 +38,286 @@ from pandas.core.dtypes.common import (
     is_string_like,
     is_timedelta64_dtype,
 )
+
 import dask.dataframe as pdd
-import multiprocessing as mp
-import timeit, random, math
-from tqdm import tqdm
+
 
 #
 import warnings
-
 warnings.filterwarnings("ignore")
-# paso imports
-# from paso.base import pasoFunction, pasoLine,get_paso_log
+
+########## logger
+class Log(object):
+    """
+        Fetch existing ``paso`` log instance.
+
+        Parameters:
+            None
+
+        Return:
+            self
+    """
+    log_ids = {}
+    log_names = {}
+    count = 0
+
+    def __init__(self):
+        self.sink_stdout = None
+
+    def log(self, log_name='paso',log_file='' ):
+        """
+        Retrieves log instance by <log_name> or creates a new log instance
+        by <log_name>.
 
 
+        Parameters:
+            log_name (str) 'paso'
+
+        Returns:
+            ``loguru`` object instance
+
+        Example:
+            >>> from paso.base import Paso
+            >>> session =  Paso().startup()
+            `` paso 4.6.2019 12:16:19 INFO Log started
+                paso 4.6.2019 12:16:19 INFO ========================================
+                paso 4.6.2019 12:16:19 INFO Read in parameter file: ../parameters/default.yaml``
+            >>> x =1
+            >>> logger.debug("x:{}".format(x))
+                ``paso 4.6.2019 13:01:26 DEBUG x:1``
+
+        """
+
+        # same or new log
+        if log_name not in Log.log_names:
+            logger.remove()  # remove previous handlers
+            Log.count += 1
+            if log_file == '':
+                self.sink_stdout = logger.add(sys.stdout
+                                         , format=log_name+" {time:D.M.YYYY HH:mm:ss} {level} {message}")
+            else:
+                self.sink_stdout = logger.add(log_file
+                                         , format=log_name+" {time:D.M.YYYY HH:mm:ss} {level} {message}")
+
+            Log.log_names[log_name ]='On'
+            Log.log_ids[log_name] = self.sink_stdout
+            logger.info('Log started')
+
+        return self
+
+class Param(object):
+    """
+    Read in from file(s) the parameters for this service.
+    Currently the __init__ will read in default.yml which sets the
+    data_environment parameter. In future top level parameters are set
+    so this class can bootstrap to other more environment specialized files.
+    currently need only:
+
+        default.yml
+        experiment-1 (optional)
+
+    """
+
+    def __init__(self, filepath= ''):
+        """
+        Bootstrap parameter files.
+
+        Parameters:
+            None
+
+        Returns:
+            self (definition of __init__ behavior).
+
+        Note:
+            Currently bootstrap to <name>.yaml or from attribute ``experiment_environment``
+            from default ``../parameters/default.yaml` thus any <na00me>.yaml can be used
+            without change to current code. Only new code need be added to
+            support <nth name>.yaml.
+
+            Notice instance is different on call to class init but resulting
+            parameter dictionary is always the same as the file specified by
+            parameter  ``experiment_environment``. This means class parameters
+            can be called from anywhere to give the same parameters and values.
+
+            It also means if dafault.yaml or underlying file specified by
+            `experiment_environment`` is changed, parameters class instance is set
+            again with a resulting new parameters dictionary.
+
+        Example:
+
+            >>> p = Param().parameter_D
+            >>> p['a key']
+
+        """
+        self.parameters_D = None
+        default_D = self._read_parameters(filepath)
+
+        if 'experiment_environment' in default_D and 'parameter_directory_path' in default_D:
+            self.parameters_D = self._read_parameters(default_D['parameter_directory_path'] \
+                                                      + default_D['experiment_environment'] + '.yaml')
+        else:
+            raise NameError(
+                "read_parameters: experiment_environment does not exist(read from default.yaml):{}".format(
+                    default_D))
+
+    def _read_parameters(self, filepath):
+        if filepath == '': filepath = "../parameters/default.yaml"
+        if os.path.exists(filepath):
+            with open(filepath) as f:
+                config = yaml.load(f)
+                return AttrDict(config)
+        else:
+            raise NameError(
+                "read_parameters: The file does not exist:{}".format(filepath)
+            )
+
+class Paso:
+    """
+        1. Log: default name paso
+        2. parameter file : default: '../parameters/default.yaml'
+        3. list of pasoes invoked.
+
+        Param:
+            log_name (str) 'paso'
+            verbose: (boolean) True
+    """
+    pipe_pasos = []
+
+    def __init__(
+            self,
+            verbose=True,
+            log_name="paso",
+    ):
+        self._log = None
+        self._parameters_filepath = '../parameters/default.yaml'
+        self._parameters_ = None
+        self._log_name = log_name
+        validate_bool_kwarg(verbose, "verbose")
+        self.verbose = verbose
+
+    def __enter__(self):
+        return self.startup()
+
+    def __exit__(self, *ATH, **AWAY):
+        return self.shutdown()
+
+    def __str__(self):
+        return "\n".join([p[0] + " [" + p[2] + "]" for p in __PiPeLiNeS__])
+
+    @property
+    def log(self):
+        return self._log
+
+    @log.setter
+    def log(self, value):
+        self._log = value
+
+    @property
+    def log_name(self):
+        return self._log_name
+
+    @log_name.setter
+    def log_name(self, value):
+        self._log_name = value
+
+    @property
+    def parameters(self):
+        return self._parameters
+
+    @parameters.setter
+    def parameters(self, value):
+        self._parameters = value
+
+    @property
+    def parameters(self):
+        return self._parameters
+
+    @parameters.setter
+    def parameters(self, value):
+        self._parameters = value
+
+    def startup(self, _parameters_filepath=''):
+        Log().log()
+        logger.info(
+            "========================================"
+        )
+        if _parameters_filepath != '':
+            self._parameters_filepath = _parameters_filepath #dont use default
+
+        Param(self._parameters_filepath)
+
+
+        if self.verbose:
+            logger.info(
+                "Read in parameter file: {}".format(self._parameters_filepath)
+            )
+#        self.flush()
+        Paso.pipe_pasos.append(["Startup Paso", "square", " "])
+        return self
+
+    def shutdown(self):
+        Paso.pipe_pasos.append(["Shutdown Paso", "square", " "])
+        logger.remove( Log.log_names['paso'])
+        return self
+
+    def display_DAG(self):
+        """
+        Displays pipeline structure in a jupyter notebook.
+
+        Param:
+            pipe (list of tuple): (node_name,shape,edge_label
+
+            Returns:
+                graph (pydot.Dot): object representing upstream pipeline paso(es).
+        """
+        graph = self._pasoLine_DAG(__PiPeLiNeS__)
+        plt = Image(graph.create_png())
+        display(plt)
+        return self
+
+    def DAG_as_png(self, filepath):
+        """
+        Saves pipeline DAG to filepath as png file.
+
+        Parameters:
+            pipe (list of tuple): (node_name,shape,edge_label
+
+            filepath (str): filepath to which the png with pipeline visualization should be persisted
+
+        Returns:
+            graph (pydot.Dot): object representing upstream pipeline paso(es).
+        """
+        graph = self._pasoLine_DAG(__PiPeLiNeS__)
+        graph.write(filepath, format="png")
+        return self
+
+    def _pasoLine_DAG(self, pipe):
+        """
+        DAG of the pasoline.
+
+        Parameters:
+            pipe (list of tuple): (node_name,shape,edge_label
+
+        Returns:
+            graph (pydot.Dot): object representing upstream pipeline paso(es).
+
+        """
+        graph = pydot.Dot()
+        node_prev = None
+        label_prev = "NA"
+        for p in pipe:
+            if p[1] == "":
+                node = pydot.Node(p[0])
+            else:
+                node = pydot.Node(p[0], shape=p[1])
+
+            graph.add_node(node)
+
+            if node != node_prev and node_prev != None:
+                graph.add_edge(pydot.Edge(node_prev, node, label=label_prev))
+            label_prev = p[2]
+            node_prev = node
+        return graph
 
 def _Check_No_NA_F_Values(df, feature):
 
@@ -73,9 +341,16 @@ def _Check_No_NA_Values(df):
 class pasoError(Exception):
     pass
 
-
 class pasoDecorators:
     def TransformWrap(fun):
+        """
+            Hide most of the paso machinery, so that developer focuses on their function or method.
+
+            Parameters: None
+
+        :return:
+            What the decorated function returns.
+        """
         # i suppose i could of done @wraos for self, but this works
         def wrapper(*args, **kwargs):
             object = args[0]
@@ -121,7 +396,17 @@ class pasoDecorators:
             return X
         return wrapper
 
-    def TrainWrap(array):
+    def TrainWrap(array=False):
+        """
+            Hide most of the paso machinery, so that developer focuses on their function or method.
+
+            Parameters:
+                array: )(boolean) False
+                    Pass a Pandas dataframe (False) or numpy arrayTrue).  Mainly for compatibility
+                    with scikit which requires arrays,
+        :return:
+            What the decorated function returns.
+        """
         def decorator(fun):
             # i suppose i could of done @wraos for self, but this works
             def wrapper(*args, **kwargs):
@@ -152,7 +437,17 @@ class pasoDecorators:
             return wrapper
         return decorator
 
-    def PredictWrap(array):
+    def PredictWrap(array=False):
+        """
+            Hide most of the paso machinery, so that developer focuses on their function or method.
+
+            Parameters:
+                array: )(boolean) False
+                    Pass a Pandas dataframe (False) or numpy arrayTrue).  Mainly for compatibility
+                    with scikit which requires arrays,
+        :return:
+            What the decorated function returns.
+        """
         def decorator(fun):
         # i suppose i could of done @wraos for self, but this works
             def wrapper(*args, **kwargs):
@@ -192,8 +487,6 @@ class pasoDecorators:
                 else:
                     object.f_x = fun(object, Xarg, **kwargs)
 
-                Xarg =  object.f_x
-                # post
                 object.predicted = True
                 return object.f_x
             return wrapper
@@ -726,224 +1019,6 @@ class pasoFunction(pasoBase):
         raise NotImplementedError
 
 
-########## logger
-def _start_paso_log(log_name="paso"):
-
-    """
-    This log instance is to be used by ``paso``object instances and functions
-    to record/log time and messesage as thet execute in the pipeline.
-
-    Parameters:
-        None:
-
-    Returns:
-        logging.Logger: logger ïnstance
-
-    """
-
-    logger = logging.getLogger(log_name)
-    logger.setLevel(logging.INFO)
-    message_format = logging.Formatter(
-        fmt="%(name)s.%(asctime)s.%(message)s", datefmt="%Y-%m-%d.%H:%M:%S"
-    )
-    # console handler
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(fmt=message_format)
-
-    # add the handlers to the logger
-    logger.addHandler(console_handler)
-
-    return logger
-
-def get_paso_log(log_name="paso"):
-    """
-    Fetch existing ``paso`` log instance.
-
-    Parameters:
-        None:
-
-    Example:
-
-        >>> Log = get_paso_log()
-        >>> Log.info('It lives!!!!')
-        >>> paso.2019-01-01::12:33:48.It lives!!!
-
-    Returns:
-        logging.Logger: logger instance
-    """
-    return logging.getLogger(log_name)
-
-
-def _flush_paso_log(log_name="paso"):
-    logger = logging.getLogger(log_name)
-    #    logger.FileHandler(log_name, mode='w')
-    return logger
-
-def _read_paso_parameters(filepath):
-    if os.path.exists(filepath):
-        with open(filepath) as f:
-            config = yaml.load(f)
-            return AttrDict(config)
-    else:
-        raise NameError(
-            "read_paso_parameters: The file does not exist:{}".format(filepath)
-        )
-############# pipeline
-# Globals that break every form of concurreny
-# todo: eliminate globals
-
-__PiPeLiNeS__ = []
-
-
-def _set_paso_in_pipe(f_name, f_shape="circle", f_label=""):
-    global __PiPeLiNeS__
-    __PiPeLiNeS__.append([f_name, f_shape, f_label])  # shape for node, label for edge
-
-
-class pasoLine:
-    """
-        1. Log: default name paso
-        2. parameter file : default: '../../lessons/parameters/default.yaml'
-        3. list of pasoes invoked.
-    """
-
-    def __init__(
-        self,
-        verbose=True,
-        log_name="paso",
-        parameter_filepath="../lessons/parameters/default.yaml",
-    ):
-        self._log = None
-        self._parameters_filepath = parameter_filepath
-        self._parameters_ = None
-        self._log_name = log_name
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
-
-    def __enter__(self):
-        return self.startup()
-
-    def __exit__(self, *ATH, **AWAY):
-        return self.shutdown()
-
-    def __str__(self):
-        return "\n".join([p[0] + " [" + p[2] + "]" for p in __PiPeLiNeS__])
-
-    @property
-    def log(self):
-        return self._log
-
-    @log.setter
-    def log(self, value):
-        self._log = value
-
-    @property
-    def log_name(self):
-        return self._log_name
-
-    @log_name.setter
-    def log_name(self, value):
-        self._log_name = value
-
-    @property
-    def parameters(self):
-        return self._parameters
-
-    @parameters.setter
-    def parameters(self, value):
-        self._parameters = value
-
-    @property
-    def parameters(self):
-        return self._parameters
-
-    @parameters.setter
-    def parameters(self, value):
-        self._parameters = value
-
-    def startup(self):
-        self.log = _start_paso_log(self.log_name)
-        self.parameters = _read_paso_parameters(self._parameters_filepath)
-        if self.verbose:
-            self.log.info(
-                "pasoLine: Read parameter file{}".format(self._parameters_filepath)
-            )
-        self.flush()
-        _set_paso_in_pipe("Startup PasoPipeLine", "square", " ")
-        return self
-
-    def shutdown(self):
-        _set_paso_in_pipe("Shutdown PasoPipeLine", "square", " ")
-        print(self)
-        #       self.flush()
-        logging.shutdown()
-
-        return self
-
-    def flush(self):
-        global __PiPeLiNeS__
-        __PiPeLiNeS__ = []
-        return _flush_paso_log(self._log_name)
-
-    def display_DAG(self):
-        """
-        Displays pipeline structure in a jupyter notebook.
-
-        Parameters:
-            pipe (list of tuple): (node_name,shape,edge_label
-
-            Returns:
-                graph (pydot.Dot): object representing upstream pipeline paso(es).
-        """
-        graph = self._pasoLine_DAG(__PiPeLiNeS__)
-        plt = Image(graph.create_png())
-        display(plt)
-        return self
-
-    def DAG_as_png(self, filepath):
-        """
-        Saves pipeline DAG to filepath as png file.
-
-        Parameters:
-            pipe (list of tuple): (node_name,shape,edge_label
-
-            filepath (str): filepath to which the png with pipeline visualization should be persisted
-
-        Returns:
-            graph (pydot.Dot): object representing upstream pipeline paso(es).
-        """
-        graph = self._pasoLine_DAG(__PiPeLiNeS__)
-        graph.write(filepath, format="png")
-        return self
-
-    def _pasoLine_DAG(self, pipe):
-        """
-        DAG of the pasoline.
-
-        Parameters:
-            pipe (list of tuple): (node_name,shape,edge_label
-
-        Returns:
-            graph (pydot.Dot): object representing upstream pipeline paso(es).
-
-        """
-        graph = pydot.Dot()
-        node_prev = None
-        label_prev = "NA"
-        for p in pipe:
-            if p[1] == "":
-                node = pydot.Node(p[0])
-            else:
-                node = pydot.Node(p[0], shape=p[1])
-
-            graph.add_node(node)
-
-            if node != node_prev and node_prev != None:
-                graph.add_edge(pydot.Edge(node_prev, node, label=label_prev))
-            label_prev = p[2]
-            node_prev = node
-        return graph
 
 
 def is_Series(X):

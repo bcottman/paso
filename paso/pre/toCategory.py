@@ -8,17 +8,15 @@ import numpy as np
 from tqdm import tqdm
 
 # paso imports
-from paso.base import pasoFunction, _Check_No_NA_F_Values, pasoError
-from paso.base import get_paso_log, toDataFrame, is_DataFrame
 from paso.base import pasoFunction, pasoDecorators
-
+from loguru import logger
+import sys
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 #
-LOGGER = get_paso_log()
 #
 class toCategory(pasoFunction):
     """
@@ -101,19 +99,19 @@ class toCategory(pasoFunction):
             if Xarg[feature].dtype == np.bool and self.boolean:
                 Xarg[feature] = Xarg[feature].astype("category")
                 if self.verbose:
-                    LOGGER.info(
+                    logger.info(
                         "toCategory boolean feature converted : {}".format(feature)
                     )
             elif Xarg[feature].dtype == np.object and self.object:
                 Xarg[feature] = Xarg[feature].astype("category")
                 if self.verbose:
-                    LOGGER.info(
+                    logger.info(
                         "toCategory object(str) feature converted : {}".format(feature)
                     )
             elif Xarg[feature].dtype == np.integer and self.integer:
                 Xarg[feature] = Xarg[feature].astype("category")
                 if self.verbose:
-                    LOGGER.info(
+                    logger.info(
                         "toCategory integer feature converted : {}".format(feature)
                     )
             else:

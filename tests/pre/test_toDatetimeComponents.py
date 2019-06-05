@@ -4,7 +4,7 @@ import pandas as pd
 # import copy, random
 import numpy as np
 import pytest
-from paso.base import pasoModel, pasoError, _Check_No_NA_Values, get_paso_log
+from paso.base import pasoModel, pasoError, _Check_No_NA_Values, Paso
 from paso.base import is_DataFrame, toDataFrame
 from paso.pre.toDatetimeComponents import toDatetimeComponents
 
@@ -13,6 +13,7 @@ import os, sys
 import warnings
 
 warnings.filterwarnings("ignore")
+session =  Paso().startup('../../parameters/default-lesson.1.yaml')
 
 # 1
 def test_df_toDatetimeComponents_Class_transform_WrongArgType():

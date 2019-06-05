@@ -6,16 +6,14 @@ import warnings
 warnings.filterwarnings("ignore")
 import numpy as np
 from numba import jit
-from tqdm import tqdm
-
 # paso imports
-from paso.base import pasoFunction,pasoError,_Check_No_NA_Values,get_paso_log
+from paso.base import pasoFunction,Paso
 from paso.base import pasoDecorators
+from loguru import logger
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
-#
-LOGGER = get_paso_log()
-
+#)
+session =  Paso().startup('../../parameters/default-lesson.1.yaml')
 @jit
 def _float_range(start, stop, step):
     istop = int((stop - start) / step)
@@ -136,7 +134,7 @@ class ContinuoustoCategory(pasoFunction):
             # MIN,MAX, Ignored
             #quantile is similar to min-max scaling:  v/(maxy-miny)
             # works on any any scale
-            return(pd.qcut(X, self.nbins,duplicates="drop").rename(X.name+'_qbin'))
+            return(pd.qcut(X, self.nbins,duplicates="drop").rename(X.name[0]+'_qbin'))
         else:
             # fixed-width bin, only works, WITHOUT SCALING, with datasets with multiple features
             # for tree-based models such as CART, random forest, xgboost, lightgbm,
@@ -229,7 +227,7 @@ class ContinuoustoCategory(pasoFunction):
                 if drop: Xarg.drop(feature, axis=1, inplace=True)
                 Xarg[Z.name] = Z
                 if self.verbose:
-                    LOGGER.info("ContinuoustoCategory : {} to {}".format(feature,Z.name))
+                    logger.info("ContinuoustoCategory : {} to {}".format(feature,Z.name))
             else:
                 pass
 
