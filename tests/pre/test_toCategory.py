@@ -4,12 +4,13 @@ warnings.filterwarnings("ignore")
 import pytest
 
 # paso imports
-from paso.base import pasoError
+from paso.base import pasoError,Paso
 from paso.pre.toCategory import toCategory
 
 #
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
+session =  Paso().startup('../../parameters/default-lesson.1.yaml')
 
 # 1
 def test_toCategory_no_passed_arg_type_error(df_type_low_V11):

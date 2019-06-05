@@ -1,19 +1,19 @@
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import numpy as np
-import pandas as pd
 from pandas.util._validators import validate_bool_kwarg
 import warnings
 warnings.filterwarnings("ignore")
-from tqdm import tqdm
 
-# paso imports
-from paso.base import pasoError,_Check_No_NA_Values,get_paso_log,toDataFrame,is_DataFrame
+# paso import
+from paso.base import _Check_No_NA_Values
 from paso.base import pasoFunction, pasoDecorators
+from loguru import logger
+
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 #
-LOGGER = get_paso_log()
-
-
 class EliminateUnviableFeatures(pasoFunction):
     """
     1. check if any feature has NA values
@@ -57,7 +57,7 @@ class EliminateUnviableFeatures(pasoFunction):
                 efs.append(f)
                 n += 1
         if n > 0:
-            if self.verbose: LOGGER.info("_Eliminate_Features_not_found_in_TEST: {}".format(str(efs)))
+            if self.verbose: logger.info("_Eliminate_Features_not_found_in_TEST: {}".format(str(efs)))
 
         rem = set(test.columns).difference(set(train.columns))
         efs = []
@@ -68,7 +68,7 @@ class EliminateUnviableFeatures(pasoFunction):
                 efs.append(f)
                 n += 1
         if n > 0:
-            if self.verbose: LOGGER.info("_Eliminate_Features_not_found_in_TRAIN {}".format(str(efs)))
+            if self.verbose: logger.info("_Eliminate_Features_not_found_in_TRAIN {}".format(str(efs)))
 
         return True
 
@@ -93,7 +93,7 @@ class EliminateUnviableFeatures(pasoFunction):
         drop_list = list(equal.keys())
         try:  # for some whacko reason there are more than 2 identical columns (sometimes)
             df.drop(columns=drop_list, inplace=True, index=1)
-            if self.verbose: LOGGER.info("_Eliminate_Duplicate_Features {}".format(str(drop_list)))
+            if self.verbose: logger.info("_Eliminate_Duplicate_Features {}".format(str(drop_list)))
         except:
             pass
 
@@ -113,7 +113,7 @@ class EliminateUnviableFeatures(pasoFunction):
                 efs.append(f)
                 n += 1
         if n > 0:
-            if self.verbose: LOGGER.info(
+            if self.verbose: logger.info(
                 "Eliminated Eliminate_Single_Unique_Value_Features {}".format(str(efs)))
             for f in efs:
                 df.drop(f, inplace=True, axis=1)
@@ -139,7 +139,7 @@ class EliminateUnviableFeatures(pasoFunction):
                 v = df[f].std() / df[f].max()
                 #                import pdb; pdb.set_trace() # debugging starts here
                 if df[f].shape[0] <= 10:  # must have more than 10 values in feature
-                    if self.verbose: LOGGER.info(
+                    if self.verbose: logger.info(
                         "NOT** _Eliminate_Low_Variance_Features Before len lt 10 {}".format(
                             f
                         )
@@ -153,7 +153,7 @@ class EliminateUnviableFeatures(pasoFunction):
                     n += 1
 
         if n > 0:
-            if self.verbose: LOGGER.info(
+            if self.verbose: logger.info(
                 "Eliminated _Eliminate_Low_Variance_Features {}".format(str(efs))
             )
             for f in efs:

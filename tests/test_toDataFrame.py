@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import pytest
 
-from paso.base import pasoFunction, pasoError, get_paso_log, toDataFrame
+from paso.base import pasoFunction, pasoError, toDataFrame
 
 def test_paso_Class_init_BadArg():
     with pytest.raises(TypeError):
@@ -10,7 +10,7 @@ def test_paso_Class_init_BadArg():
 #2
 def test_paso_2d_numpy_labels_(X,cn):
     g = toDataFrame()  #
-    assert g.transform(X,labels= cn).columns[1] == "float_1"
+    assert g.transform(X,labels= cn).columns[1] == "k"
 #3
 def test_paso_2d_numpy_labels_default(X, cn):
         g = toDataFrame()  #

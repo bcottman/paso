@@ -28,13 +28,17 @@ from scipy.optimize import fmin
 # TODO: Explore efficacy of other opt. methods
 
 # paso imports
-from paso.base import pasoModel,pasoError,_Check_No_NA_Values,get_paso_log
-from paso.base import is_DataFrame,toDataFrame,pasoDecorators
+from paso.base import pasoModel,pasoError
+from paso.base import toDataFrame,pasoDecorators
+from paso.base import Paso
+from loguru import logger
+import sys
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-
-# introduce __ScalerDict__ for paso universe
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
+#
 
 __ScalerDict__ = {}
 __ScalerDict__["StandardScaler"] = StandardScaler
@@ -45,7 +49,7 @@ __ScalerDict__["RobustScaler"] = RobustScaler
 __ScalerDict__["QuantileTransformer"] = QuantileTransformer
 # __ScalerDict__['self'] = skpr.__all__,
 #######
-logger = get_paso_log()
+Paso()
 # Coefficent Functions
 @jit
 def _w_d(z, delta):
@@ -361,7 +365,7 @@ class scaler(pasoModel):
         """
         return(list(__ScalerDict__.keys()))
 
-    @pasoDecorators.TrainWrap(True)
+    @pasoDecorators.TrainWrap(array=True)
     def train(self, X,inplace=False, **kwargs):
         """
 
@@ -380,7 +384,7 @@ class scaler(pasoModel):
 
         return self
 #
-    @pasoDecorators.PredictWrap(True)
+    @pasoDecorators.PredictWrap(array=True)
     def predict(self, X, inplace=False, **kwargs):
         """
         Parameters:
