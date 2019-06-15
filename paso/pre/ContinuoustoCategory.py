@@ -3,26 +3,32 @@ import math
 import pandas as pd
 from pandas.util._validators import validate_bool_kwarg
 import warnings
+
 warnings.filterwarnings("ignore")
 import numpy as np
 from numba import jit
+
 # paso imports
-from paso.base import pasoFunction,Paso
+from paso.base import pasoFunction, Paso
 from paso.base import pasoDecorators
 from loguru import logger
+
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
-#)
-session =  Paso().startup('../../parameters/default-lesson.1.yaml')
+# )
+session = Paso().startup("../../parameters/default-lesson.1.yaml")
+
+
 @jit
 def _float_range(start, stop, step):
     istop = int((stop - start) / step)
     edges = []
     for i in range(int(istop) + 1):
         edges.append(start + i * step)
-    return (edges)
+    return edges
 
-#@jit  CANT DO IT, X IS DATAFRAME
+
+# @jit  CANT DO IT, X IS DATAFRAME
 def _fixed_width_labels(X, nbins, miny, maxy):
     # preparation of fixed-width bins
 
@@ -31,13 +37,14 @@ def _fixed_width_labels(X, nbins, miny, maxy):
     loglf = 0 if maxy == 0 else math.log10(abs(maxy / nbins))
     hf = round(abs(loglf))
     if loglf > 0:
-        fs = '(%2.' + str(0) + 'f, %2.' + str(0) + 'f]'
+        fs = "(%2." + str(0) + "f, %2." + str(0) + "f]"
     else:
         ff = lf + 1 if (lf > hf) else hf + 1
-        fs = '(%2.' + str(ff) + 'f, %2.' + str(ff) + 'f]'
+        fs = "(%2." + str(ff) + "f, %2." + str(ff) + "f]"
 
     lbl = np.array([fs % (edges[i], edges[i + 1]) for i in range(len(edges) - 1)])
-    return(lbl)
+    return lbl
+
 
 class ContinuoustoCategory(pasoFunction):
     """
@@ -105,13 +112,13 @@ class ContinuoustoCategory(pasoFunction):
 
     """
 
-    def __init__(self,verbose=True):
+    def __init__(self, verbose=True):
         super().__init__()
 
-        validate_bool_kwarg(verbose, 'verbose')
+        validate_bool_kwarg(verbose, "verbose")
         self.verbose = verbose
 
-    def _transform(self, X,nbins,miny,maxy):
+    def _transform(self, X, nbins, miny, maxy):
         """
         Note:
             ``quantile_bin = True``
@@ -129,38 +136,42 @@ class ContinuoustoCategory(pasoFunction):
             pandas Series type of values type category
 
         """
-#        import pdb; pdb.set_trace() # debugging starts here
+        #        import pdb; pdb.set_trace() # debugging starts here
         if self.quantile_bins:
             # MIN,MAX, Ignored
-            #quantile is similar to min-max scaling:  v/(maxy-miny)
+            # quantile is similar to min-max scaling:  v/(maxy-miny)
             # works on any any scale
-            return(pd.qcut(X, self.nbins,duplicates="drop").rename(X.name[0]+'_qbin'))
+            return pd.qcut(X, self.nbins, duplicates="drop").rename(X.name[0] + "_qbin")
         else:
             # fixed-width bin, only works, WITHOUT SCALING, with datasets with multiple features
             # for tree-based models such as CART, random forest, xgboost, lightgbm,
             # catboost,etc. Namely Deep Learning using neural nets won't work (correctly).
-            #Exception being integers that are categories, example: dayof week
-#            labels = fixed_width_labels(X,nbins,self.miny,self.maxy)
-            lbls = _fixed_width_labels(X,nbins,miny,maxy)
-            return(pd.cut(X, nbins,labels=lbls, duplicates="drop").rename(X.name+'_bin'))
+            # Exception being integers that are categories, example: dayof week
+            #            labels = fixed_width_labels(X,nbins,self.miny,self.maxy)
+            lbls = _fixed_width_labels(X, nbins, miny, maxy)
+            return pd.cut(X, nbins, labels=lbls, duplicates="drop").rename(
+                X.name + "_bin"
+            )
 
     @pasoDecorators.TransformWrap
-    def transform(self, Xarg, drop=True, inplace=False
-                  , miny=[], maxy=[]
-                  , integer=True, floaty=True
-                  , quantile_bins=True,nbins=100):
+    def transform(
+        self,
+        Xarg,
+        drop=True,
+        inplace=False,
+        miny=[],
+        maxy=[],
+        integer=True,
+        floaty=True,
+        quantile_bins=True,
+        nbins=100,
+    ):
         """
         Transforms any float, continuous integer values of  numpy array, list, tuple or
         any pandas dataframe or series feature(s) type(s) to category type(s).
 
         Parameters:
             X: (dataFrame,numpy array,list)
-
-            miny: default: ``.miny()`
-                mininum number that will be binned.
-
-            maxy: default: ``.maxy,()``
-                maximum number that will be binned.
 
             drop: (boolean) default:True
                 do not keep original features.
@@ -174,7 +185,7 @@ class ContinuoustoCategory(pasoFunction):
             floaty: (boolean) default:True
                 set floaty=False if not continuous and not to transform into category.
 
-            quantile_bins: (boolean) default: True, use quantile bin.
+            stategy: (boolean) default: True, use quantile bin.
                 quantile is simular to v/(maxy-miny), works on any any scale.
                 False, use fixed-width bin. miny,maxy arguments are ignored.
 
@@ -198,36 +209,41 @@ class ContinuoustoCategory(pasoFunction):
         Raises:
             TypeError('"ContinuoustoCategory:inplace: requires boolean type.")
         """
-        validate_bool_kwarg(integer, 'integer')
+        validate_bool_kwarg(integer, "integer")
         self.integer = integer
-        validate_bool_kwarg(floaty, 'floaty')
+        validate_bool_kwarg(floaty, "floaty")
         self.float = floaty
         # handle miny,maxy
         self.nbins = nbins
         self.quantile_bins = quantile_bins
         # handles float, continuous integer. set integer=False if not contunuous
         # any other dataframe value type left as is.
-        for nth,feature in enumerate(Xarg.columns):
-            if (self.float and Xarg[feature].dtype == np.float)\
-                    or (self.integer and Xarg[feature].dtype == np.int):
+        for nth, feature in enumerate(Xarg.columns):
+            if (self.float and Xarg[feature].dtype == np.float) or (
+                self.integer and Xarg[feature].dtype == np.int
+            ):
                 if type(self.nbins) == tuple or type(self.nbins) == list:
                     nbins = self.nbins[nth]
                 else:
                     nbins = self.nbins
-                tminy = Xarg[feature].min() if miny==[] else miny[nth]
-                tmaxy = Xarg[feature].max() if maxy==[] else maxy[nth]
-#                print('*****  ',feature)
-                Z = self._transform(Xarg[feature], nbins,tminy,tmaxy)
+                tminy = Xarg[feature].min() if miny == [] else miny[nth]
+                tmaxy = Xarg[feature].max() if maxy == [] else maxy[nth]
+                #                print('*****  ',feature)
+                Z = self._transform(Xarg[feature], nbins, tminy, tmaxy)
 
                 # import pdb; pdb.set_trace() # debugging starts here
                 # drop feature, if a list and its short, then their is an error.
                 # no drop for integer=False or floaty=False
                 drop = self.drop  # want the hell , do per iteration, negliable cost
-                if type(self.drop) == tuple or type(self.drop) == list: drop = self.drop[nth]
-                if drop: Xarg.drop(feature, axis=1, inplace=True)
+                if type(self.drop) == tuple or type(self.drop) == list:
+                    drop = self.drop[nth]
+                if drop:
+                    Xarg.drop(feature, axis=1, inplace=True)
                 Xarg[Z.name] = Z
                 if self.verbose:
-                    logger.info("ContinuoustoCategory : {} to {}".format(feature,Z.name))
+                    logger.info(
+                        "ContinuoustoCategory : {} to {}".format(feature, Z.name)
+                    )
             else:
                 pass
 

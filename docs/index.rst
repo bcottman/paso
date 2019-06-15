@@ -1,4 +1,4 @@
-Welcome to blox
+Welcome to paso
 ==================================
 
 .. toctree::

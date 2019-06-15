@@ -23,16 +23,16 @@ import sklearn.preprocessing.data as skpr
 
 # scipy imports
 from scipy.special import lambertw
-from scipy.stats import kurtosis, norm, rankdata, boxcox
+from scipy.stats import kurtosis, boxcox
 from scipy.optimize import fmin
-# TODO: Explore efficacy of other opt. methods
 
 # paso imports
-from paso.base import pasoModel,pasoError
-from paso.base import toDataFrame,pasoDecorators
+from paso.base import pasoModel, PasoError
+from paso.base import toDataFrame, pasoDecorators
 from paso.base import Paso
 from loguru import logger
 import sys
+
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -111,8 +111,10 @@ def _delta_gmm(z):
                 return 1e10
             else:
                 return k
+
     res = fmin(func, np.log(delta0), disp=0)
     return np.around(np.exp(res[-1]), 6)
+
 
 def _delta_init(z):
     gamma = kurtosis(z, fisher=False, bias=False)
@@ -122,9 +124,10 @@ def _delta_init(z):
         delta0 = 0.01
     return delta0
 
+
 ########
 # BoxCoxScaler
-class BoxCoxScaler(TransformerMixin):
+class BoxCoxScaler(BaseEstimator, TransformerMixin):
     """
     BoxCoxScaler method to Gaussianize heavy-tailed data. The Box-Cox transformation is to be used to:
         - stabilize variance
@@ -149,7 +152,7 @@ class BoxCoxScaler(TransformerMixin):
     def fit(self, X, **kwargs):
         return self.train(X, **kwargs)
 
-    def train(self, X,inplace=False, **kwargs):
+    def train(self, X, inplace=False, **kwargs):
         """
         Args:
             X (dataframe):
@@ -175,7 +178,7 @@ class BoxCoxScaler(TransformerMixin):
         return self.predict(X, **kwargs)
 
     def predict(self, X, inplace=False, **kwargs):
-        #todo: transform dataframe to numpy and back?
+        # todo: transform dataframe to numpy and back?
         """
         Transform data using a previous ``.fit`` that calulates BoxCox coefficents for data.
                 
@@ -189,7 +192,9 @@ class BoxCoxScaler(TransformerMixin):
 
         """
 
-        return np.array([boxcox(x_i, lmbda=lmbda_i) for x_i, lmbda_i in zip(X.T, self.coefs_)]).T
+        return np.array(
+            [boxcox(x_i, lmbda=lmbda_i) for x_i, lmbda_i in zip(X.T, self.coefs_)]
+        ).T
 
     # is there a way to specify with step or does does step need enhancing?
     def inverse_transform(self, y):
@@ -204,7 +209,7 @@ class BoxCoxScaler(TransformerMixin):
             ]
         ).T
 
-    def inverse_predict(self, y,inplace=False):
+    def inverse_predict(self, y, inplace=False):
         """
         Args:
             y: dataframe
@@ -214,11 +219,13 @@ class BoxCoxScaler(TransformerMixin):
         """
         return self.inverse_transform(y)
 
+
 __ScalerDict__["BoxCoxScaler"] = BoxCoxScaler
 ########
 # LambertScaler
 
-class LambertScaler(TransformerMixin):
+
+class LambertScaler(BaseEstimator, TransformerMixin):
     """
     LambertScaler method to Gaussianize heavy-tailed data.
     - a one-parameter (``w_t``) family based on Lambert's W function that removes heavy tails from data.
@@ -238,6 +245,7 @@ class LambertScaler(TransformerMixin):
     :URL: https://arxiv.org/pdf/1010.2265.pdf
 
     """
+
     def __init__(self, tol=0.001, max_iter=1000):
         self.coefs_ = []  # Store tau for each transformed variable
         self.tol = tol
@@ -251,7 +259,7 @@ class LambertScaler(TransformerMixin):
         self._reset()
         return self.train(X, **kwargs)
 
-    def train(self, X,inplace=False, **kwargs):
+    def train(self, X, inplace=False, **kwargs):
         """
         Fit a one-parameter (``w_t``) family based on Lambert's W function that removes heavy tails from data. ``w_t`` will be determined iteratively (``max_iter``) to tolerance (``tol``) for each feature(column). Because of the iterative calulation of ``w_t`` ``LambertScaler`` can be slower by a factor of 10 than other scalers. 
                         
@@ -288,7 +296,7 @@ class LambertScaler(TransformerMixin):
             X: transformed by  Lambert's W function and returns 2-d numpy array.
         """
 
-        return  np.array([_w_t(x_i, tau_i) for x_i, tau_i in zip(X.T, self.coefs_)]).T
+        return np.array([_w_t(x_i, tau_i) for x_i, tau_i in zip(X.T, self.coefs_)]).T
 
     def inverse_transform(self, y, inplace=False):
         """
@@ -302,7 +310,7 @@ class LambertScaler(TransformerMixin):
 
         return self.inverse_predict(X)
 
-    def inverse_predict(self, y,inplace=False):
+    def inverse_predict(self, y, inplace=False):
         """
         Reverse transformation of data from Lambert transformation.
                 
@@ -312,12 +320,15 @@ class LambertScaler(TransformerMixin):
         Returns: y, transformed back from Lambert's W function.
         """
 
-        return np.array([_inverse(y_i, tau_i) for y_i, tau_i in zip(y.T, self.coefs_)]).T
+        return np.array(
+            [_inverse(y_i, tau_i) for y_i, tau_i in zip(y.T, self.coefs_)]
+        ).T
+
 
 __ScalerDict__["LambertScaler"] = LambertScaler
 
 # paso Scaler to __ScalerDict__
-class scaler(pasoModel):
+class Scaler(pasoModel):
     """
     Parameters:
         encoderKey: (str) One of 'StandardScaler', 'MinMaxScaler', 'Normalizer', 'MaxAbsScaler', 'RobustScaler'
@@ -344,15 +355,16 @@ class scaler(pasoModel):
 
 
     """
-    def __init__(self, encoderKey,verbose=False, *args, **kwargs):
+
+    def __init__(self, encoderKey, verbose=False, *args, **kwargs):
         super().__init__()
         if encoderKey in __ScalerDict__:
             Encoder = __ScalerDict__[encoderKey](*args)
         else:
-            raise pasoError("paso:scale: No scaler named: {} found.".format( encoderKey))
+            raise PasoError("paso:scale: No scaler named: {} found.".format(encoderKey))
         self.encoderKey = encoderKey
         self.model = Encoder
-        validate_bool_kwarg(verbose,'verbose')
+        validate_bool_kwarg(verbose, "verbose")
         self.verbose = verbose
 
     def scalers(self):
@@ -363,10 +375,10 @@ class scaler(pasoModel):
         Returns:
             List of available scaler names.
         """
-        return(list(__ScalerDict__.keys()))
+        return list(__ScalerDict__.keys())
 
     @pasoDecorators.TrainWrap(array=True)
-    def train(self, X,inplace=False, **kwargs):
+    def train(self, X, inplace=False, **kwargs):
         """
 
         Parameters:
@@ -383,7 +395,8 @@ class scaler(pasoModel):
         self.model.fit(X, **kwargs)
 
         return self
-#
+
+    #
     @pasoDecorators.PredictWrap(array=True)
     def predict(self, X, inplace=False, **kwargs):
         """
@@ -401,7 +414,7 @@ class scaler(pasoModel):
         self.f_x = self.model.transform(X, **kwargs)
         return self.f_x
 
-    def inverse_predict(self, Xarg,inplace=False, **kwargs):
+    def inverse_predict(self, Xarg, inplace=False, **kwargs):
         """
         Args:
             Xarg (array-like): Predictions of different models for the labels.
@@ -412,9 +425,13 @@ class scaler(pasoModel):
         X = Xarg.values
         if self.trained and self.predicted:
             X = self.model.inverse_transform(X)
-            if self.verbose: logger.info("Scaler:inverse_transform:{}".format(self.encoderKey))
-            return toDataFrame().transform(X,labels=Xarg.columns,inplace=False)
+            if self.verbose:
+                logger.info("Scaler:inverse_transform:{}".format(self.encoderKey))
+            return toDataFrame().transform(X, labels=Xarg.columns, inplace=False)
         else:
-            raise pasoError('scale:inverse_transform: must call train and predict before inverse')
-########
+            raise PasoError(
+                "scale:inverse_transform: must call train and predict before inverse"
+            )
 
+
+########

@@ -6,7 +6,7 @@ warnings.filterwarnings("ignore")
 from tqdm import tqdm
 
 # paso imports
-from paso.base import pasoError,Paso
+from paso.base import PasoError,Paso
 from paso.pre.EliminateUnviableFeatures import EliminateUnviableFeatures
 
 __author__ = "Bruce_H_Cottman"
@@ -43,7 +43,7 @@ def test_df_EliminateUnviableFeatures_passed_arg_type_error(df_City):
 @pytest.mark.smoke
 def test_df_EliminateUnviableFeatures_with_NA_Values(df_typeNA):
     g = EliminateUnviableFeatures()
-    with pytest.raises(pasoError):
+    with pytest.raises(PasoError):
         g.transform(df_typeNA)
 #7
 @pytest.mark.smoke

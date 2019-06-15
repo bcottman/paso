@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore")
 
 # paso import
 from paso.base import _Check_No_NA_Values
-from paso.base import pasoFunction, pasoDecorators
+from paso.base import pasoFunction, pasoDecorators,PasoError
 from loguru import logger
 
 __author__ = "Bruce_H_Cottman"
@@ -203,35 +203,30 @@ class EliminateUnviableFeatures(pasoFunction):
                 # 4
                 result = self._Eliminate_Low_Variance_Features(df)
                 if not result:
-                    raise TypeError(
-                        "After _Eliminate_Low_Variance_Features:transform:df: has no features."
-                    )
+                    logger.error("After _Eliminate_Low_Variance_Features:transform:df: has no features.")
+                    raise PasoError( )
                 # 2
                 result = self._Eliminate_Duplicate_Features(df)
                 if not result:
-                    raise TypeError(
-                        "After _Eliminate_Duplicate_Features:transform:df: has no features."
-                    )
+                    logger.error("After _Eliminate_Low_Variance_Features:transform:df: has no features.")
+                    raise PasoError( )
                 # 3 ,unless SDLIMIT < 0, _Eliminate_Duplicate_Features will eminate single value
                 result = self._Eliminate_Single_Unique_Value_Features(df)
                 if not result:
-                    raise TypeError(
-                        "After _Eliminate_Single_Unique_Value_Features:transform:df: has no features."
-                    )
+                    looer.error("After _Eliminate_Single_Unique_Value_Features:transform:df: has no features.")
+                    raise PasoError()
             else:
-                raise ValueError(
-                    "EliminateUnviableFeatures:transform:X_test: \
-                        X DataFrame has NaN values: "
-                    )
+                logger.error("EliminateUnviableFeatures:transform:X_test: \
+                        X DataFrame has NaN values: ")
+                raise PasoError()
         if Y is None:
             pass
         else:
             # 1
             result = self._Eliminate_Features_not_found_in_train_and_test(Xarg, Y)
             if not result:
-                raise TypeError(
-                    "_Elimnate_Features_not_found_in_train_and_test:transform:X and Y are orthogonal."
-                )
+                logger.error("_Elimnate_Features_not_found_in_train_and_test:transform:X and Y are orthogonal.")
+                raise PasoError( )
 
         if self.cache: self.f_x = Xarg,Y
         self.transformed = True
