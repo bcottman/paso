@@ -4,7 +4,8 @@ __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 
 from abc import ABC
-''
+
+""
 # todo: insert dask datatypes all over
 from loguru import logger
 import pydot_ng as pydot
@@ -21,30 +22,17 @@ from pandas.util._validators import validate_bool_kwarg
 import multiprocessing as mp
 import timeit, math
 from tqdm import tqdm
-
-from pandas.core.dtypes.common import (
-    is_bool,
-    is_categorical_dtype,
-    is_datetime64_dtype,
-    is_datetimelike,
-    is_dict_like,
-    is_extension_array_dtype,
-    is_extension_type,
-    is_hashable,
-    is_integer,
-    is_iterator,
-    is_list_like,
-    is_scalar,
-    is_string_like,
-    is_timedelta64_dtype,
-)
-
-import dask.dataframe as pdd
-
+import multiprocessing as mp
 
 #
 import warnings
+
 warnings.filterwarnings("ignore")
+
+
+class PasoError(Exception):
+    pass
+
 
 ########## logger
 class Log(object):
@@ -57,14 +45,16 @@ class Log(object):
         Return:
             self
     """
+
     log_ids = {}
     log_names = {}
     count = 0
+    additional_log_files = {}
 
     def __init__(self):
         self.sink_stdout = None
 
-    def log(self, log_name='paso',log_file='' ):
+    def log(self, log_name="paso", log_file=""):
         """
         Retrieves log instance by <log_name> or creates a new log instance
         by <log_name>.
@@ -92,18 +82,32 @@ class Log(object):
         if log_name not in Log.log_names:
             logger.remove()  # remove previous handlers
             Log.count += 1
-            if log_file == '':
-                self.sink_stdout = logger.add(sys.stdout
-                                         , format=log_name+" {time:D.M.YYYY HH:mm:ss} {level} {message}")
+            if log_file == "":
+                self.sink_stdout = logger.add(
+                    sys.stdout,
+                    format=log_name + " {time:D.M.YYYY HH:mm:ss} {level} {message}",
+                )
             else:
-                self.sink_stdout = logger.add(log_file
-                                         , format=log_name+" {time:D.M.YYYY HH:mm:ss} {level} {message}")
+                self.sink_stdout = logger.add(
+                    log_file,
+                    format=log_name + " {time:D.M.YYYY HH:mm:ss} {level} {message}",
+                )
 
-            Log.log_names[log_name ]='On'
+            Log.log_names[log_name] = "On"
             Log.log_ids[log_name] = self.sink_stdout
-            logger.info('Log started')
+            logger.debug("Log started")
 
         return self
+
+    def file(self, log_name="paso", log_file=""):
+        if log_file == "":
+            log_file = "default.log"
+        Log.additional_log_files[log_file] = logger.add(
+            log_file, format=log_name + " {time:D.M.YYYY HH:mm:ss} {level} {message}"
+        )
+        logger.info("Logging also to file:{}".format(log_file))
+        return self
+
 
 class Param(object):
     """
@@ -118,7 +122,7 @@ class Param(object):
 
     """
 
-    def __init__(self, filepath= ''):
+    def __init__(self, filepath=""):
         """
         Bootstrap parameter files.
 
@@ -152,16 +156,25 @@ class Param(object):
         self.parameters_D = None
         default_D = self._read_parameters(filepath)
 
-        if 'experiment_environment' in default_D and 'parameter_directory_path' in default_D:
-            self.parameters_D = self._read_parameters(default_D['parameter_directory_path'] \
-                                                      + default_D['experiment_environment'] + '.yaml')
+        if (
+            "experiment_environment" in default_D
+            and "parameter_directory_path" in default_D
+        ):
+            self.parameters_D = self._read_parameters(
+                default_D["parameter_directory_path"]
+                + default_D["experiment_environment"]
+                + ".yaml"
+            )
         else:
             raise NameError(
                 "read_parameters: experiment_environment does not exist(read from default.yaml):{}".format(
-                    default_D))
+                    default_D
+                )
+            )
 
     def _read_parameters(self, filepath):
-        if filepath == '': filepath = "../parameters/default.yaml"
+        if filepath == "":
+            filepath = "../parameters/default.yaml"
         if os.path.exists(filepath):
             with open(filepath) as f:
                 config = yaml.load(f)
@@ -171,7 +184,8 @@ class Param(object):
                 "read_parameters: The file does not exist:{}".format(filepath)
             )
 
-class Paso:
+
+class Paso(object):
     """
         1. Log: default name paso
         2. parameter file : default: '../parameters/default.yaml'
@@ -181,28 +195,33 @@ class Paso:
             log_name (str) 'paso'
             verbose: (boolean) True
     """
+
     pipe_pasos = []
 
     def __init__(
-            self,
-            verbose=True,
-            log_name="paso",
+        self, verbose=True, log_name="paso", log_file="", parameters_filepath=""
     ):
-        self._log = None
-        self._parameters_filepath = '../parameters/default.yaml'
-        self._parameters_ = None
-        self._log_name = log_name
+
+        self.log = None
+
+        if parameters_filepath == "":
+            self.parameters_filepath = "../parameters/default.yaml"
+        else:
+            self.parameters_filepath = parameters_filepath
+        self.parameters = None
+        self.log_name = log_name
+        self.log_file = log_file
         validate_bool_kwarg(verbose, "verbose")
         self.verbose = verbose
 
     def __enter__(self):
         return self.startup()
 
-    def __exit__(self, *ATH, **AWAY):
+    def __exit__(self, *args, **kwargs):
         return self.shutdown()
 
-    def __str__(self):
-        return "\n".join([p[0] + " [" + p[2] + "]" for p in __PiPeLiNeS__])
+    #   def __str__(self):
+    #        return "{}".format(self)
 
     @property
     def log(self):
@@ -221,12 +240,12 @@ class Paso:
         self._log_name = value
 
     @property
-    def parameters(self):
-        return self._parameters
+    def log_file(self):
+        return self._log_file
 
-    @parameters.setter
-    def parameters(self, value):
-        self._parameters = value
+    @log_file.setter
+    def log_file(self, value):
+        self._log_file = value
 
     @property
     def parameters(self):
@@ -236,28 +255,35 @@ class Paso:
     def parameters(self, value):
         self._parameters = value
 
-    def startup(self, _parameters_filepath=''):
-        Log().log()
-        logger.info(
-            "========================================"
-        )
-        if _parameters_filepath != '':
-            self._parameters_filepath = _parameters_filepath #dont use default
+    @property
+    def parameters_filepath(self):
+        return self._parameters_filepath
 
-        Param(self._parameters_filepath)
+    @parameters.setter
+    def parameters_filepath(self, value):
+        self._parameters_filepath = value
 
-
+    def startup(self):
+        Log().log(log_name=self._log_name, log_file=self._log_file)
+        logger.debug("========================================")
+        Param(filepath=self._parameters_filepath)
         if self.verbose:
-            logger.info(
-                "Read in parameter file: {}".format(self._parameters_filepath)
-            )
-#        self.flush()
+            logger.debug("Read in parameter file: {}".format(self.parameters_filepath))
+        #        self.flush()
         Paso.pipe_pasos.append(["Startup Paso", "square", " "])
         return self
 
     def shutdown(self):
         Paso.pipe_pasos.append(["Shutdown Paso", "square", " "])
-        logger.remove( Log.log_names['paso'])
+        if "paso" in Log.log_names:
+            del Log.log_names["paso"]
+        if "paso" in Log.log_ids:
+            logger.remove(Log.log_ids["paso"])
+            del Log.log_ids["paso"]
+
+        logger.add(
+            sys.stdout, format=" default {time:D.M.YYYY HH:mm:ss} {level} {message}"
+        )
         return self
 
     def display_DAG(self):
@@ -319,12 +345,13 @@ class Paso:
             node_prev = node
         return graph
 
+
 def _Check_No_NA_F_Values(df, feature):
 
     if not df[feature].isna().any():
         return True
     else:
-        raise pasoError("Passed dataset, 1st arg, contained NA")
+        raise PasoError("Passed dataset, 1st arg, contained NA")
         return False
 
 
@@ -338,8 +365,9 @@ def _Check_No_NA_Values(df):
     return True
 
 
-class pasoError(Exception):
+class PasoError(Exception):
     pass
+
 
 class pasoDecorators:
     def TransformWrap(fun):
@@ -355,7 +383,7 @@ class pasoDecorators:
         def wrapper(*args, **kwargs):
             object = args[0]
             if len(args) < 2:
-                raise pasoError(
+                raise PasoError(
                     "TransformWrap:Must be at least two arguments: ", args, kwargs
                 )
             else:
@@ -374,7 +402,7 @@ class pasoDecorators:
             if is_DataFrame(Xarg):
                 pass
             else:
-                raise pasoError(
+                raise PasoError(
                     "TransformWrap:Xarg must be if type DataFrame. Was type:{}",
                     format(type(Xarg)),
                 )
@@ -394,6 +422,7 @@ class pasoDecorators:
             object.f_x = X
             object.transformed = True
             return X
+
         return wrapper
 
     def TrainWrap(array=False):
@@ -407,13 +436,16 @@ class pasoDecorators:
         :return:
             What the decorated function returns.
         """
+
         def decorator(fun):
             # i suppose i could of done @wraos for self, but this works
             def wrapper(*args, **kwargs):
                 object = args[0]
                 if len(args) < 2:
-                    raise pasoError(
-                        "TransformWrap:Must be at least two arguments (self,X): ", args, kwargs
+                    raise PasoError(
+                        "TransformWrap:Must be at least two arguments (self,X): ",
+                        args,
+                        kwargs,
                     )
                 else:
                     Xarg = args[1]
@@ -421,7 +453,7 @@ class pasoDecorators:
                 if is_DataFrame(Xarg):
                     pass
                 else:
-                    raise pasoError(
+                    raise PasoError(
                         "TrainWrap:Xarg must be if type DataFrame. Was type:{}",
                         format(type(Xarg)),
                     )
@@ -433,8 +465,10 @@ class pasoDecorators:
                     fun(object, Xarg, **kwargs)
                 # post
                 object.trained = True
-                return object # returnes self
+                return object  # returnes self
+
             return wrapper
+
         return decorator
 
     def PredictWrap(array=False):
@@ -448,18 +482,19 @@ class pasoDecorators:
         :return:
             What the decorated function returns.
         """
+
         def decorator(fun):
-        # i suppose i could of done @wraos for self, but this works
+            # i suppose i could of done @wraos for self, but this works
             def wrapper(*args, **kwargs):
                 object = args[0]
                 if len(args) < 2:
-                    raise pasoError(
+                    raise PasoError(
                         "PredictWrap:Must be at least two arguments: ", args, kwargs
                     )
                 else:
                     Xarg = args[1]
                 if object.trained == False:
-                    raise pasoError(
+                    raise PasoError(
                         "PredictWrap:Must call train before predict.", args, kwargs
                     )
                 object.inplace = False
@@ -471,7 +506,7 @@ class pasoDecorators:
                 if is_DataFrame(Xarg):
                     pass
                 else:
-                    raise pasoError(
+                    raise PasoError(
                         "TransformWrap:Xarg must be if type DataFrame. Was type:{}",
                         format(type(Xarg)),
                     )
@@ -482,15 +517,20 @@ class pasoDecorators:
                     pass
                 _Check_No_NA_Values(Xarg)
                 if array:
-                    object.f_x = pd.DataFrame(fun(object, Xarg.to_numpy(copy=True), **kwargs)
-                                              , columns=Xarg.columns, copy=False)
+                    arr = fun(object, Xarg.to_numpy(copy=True), **kwargs)
+                    object.f_x = pd.DataFrame(arr, columns=Xarg.columns)
                 else:
-                    object.f_x = fun(object, Xarg, **kwargs)
+                    df = fun(object, Xarg.to_numpy(copy=True), **kwargs)
+                    df.columns = Xarg.columns
+                    object.f_x = df
 
                 object.predicted = True
                 return object.f_x
+
             return wrapper
+
         return decorator
+
 
 class pasoBase(ABC):
     """
@@ -749,7 +789,7 @@ class pasoModel(pasoBase):
             f(X:) (model object)
 
         Raises:
-            pasoError(\"Must write model before load.\"  )
+            PasoError(\"Must write model before load.\"  )
         """
         if filepath != "":
             self.save_model_file_name = filepath
@@ -763,7 +803,8 @@ class pasoModel(pasoBase):
         if self.model_persisted:
             return self.model.load(self.save_model_file_name)
         else:
-            raise pasoError("Must save f_x before load.")
+            logger.error("Must save f_x before load.")
+            raise PasoError()
 
     def save(self, filepath):
         """
@@ -774,9 +815,9 @@ class pasoModel(pasoBase):
                 filepath where the predict parameters should be persisted
 
         Raises:
-                raise pasoError("Model:save must have non-blank filename.")
+                raise PasoError("Model:save must have non-blank filename.")
         else:
-            raise pasoError("Model: Must train and predict before save operation."  )
+            raise PasoError("Model: Must train and predict before save operation."  )
         """
         if self.trained:
             if filepath != "":
@@ -785,9 +826,11 @@ class pasoModel(pasoBase):
                 self.model.save(self.save_model_file_name)
                 return self
             else:
-                raise pasoError("Model:save must have non-blank filename.")
+                logger.error("Model:save must have non-blank filename.")
+                raise PasoError()
         else:
-            raise pasoError("Model: Must train and predict before save operation.")
+            logger.error("Model: Must train and predict before save operation.")
+            raise PasoError()
 
     def write(self, filepath=""):
         """
@@ -802,19 +845,21 @@ class pasoModel(pasoBase):
             f(X:) (dataframe)
 
         Raises:
-            pasoError(\"Model:write must have non-blank filename.\")
+            PasoError(\"Model:write must have non-blank filename.\")
 
         """
         if self.trained and self.predicted:
             if filepath != "":
                 self.persisted = True
                 self.save_file_name = filepath
-                self.f_x.to_parquet(filepath)
-                return True
+                self.f_x.to_parquet(self.save_file_name)
+                return self
             else:
-                raise pasoError("Model: must have non-blank filename.")
+                logger.error("Model: must have non-blank filename.")
+                raise PasoError()
         else:
-            raise pasoError("Model: Must train and predict before write operation.")
+            logger.error("Model: Must train and predict before write operation.")
+            raise PasoError()
 
     def read(self, filepath=""):
         """
@@ -829,19 +874,21 @@ class pasoModel(pasoBase):
             f(X:) (dataframe)
 
         Raises:
-            pasoError(\"Must write f_x before read.\"  )
+            PasoError(\"Must write f_x before read.\"  )
         """
         if filepath != "":
             self.save_file_name = filepath
         if not os.path.exists(self.save_file_name):
-            raise NameError(
+            logger.error(
                 "read f(x):The file does not exist:{}".format(self.save_file_name)
             )
+            raise PacoError()
         if self.persisted:
             self.f_x = pd.read_parquet(self.save_file_name)
             return self.f_x
         else:
-            raise pasoError("Must write f_x before read.")
+            logger.error("Must write f_x before read.")
+            raise PacoError()
 
     def train(self, X, *args, **kwargs):
         """
@@ -906,6 +953,7 @@ class pasoFunction(pasoBase):
     """
     For transform functions ``f(x)`` only.
     """
+
     def __init__(self):
         super().__init__()
         # function
@@ -964,9 +1012,9 @@ class pasoFunction(pasoBase):
             dataframe: outputs f(x)
 
         Raises:
-            pasoError(\"must have non-blank filename.\")
+            PasoError(\"must have non-blank filename.\")
 
-            pasoError(\"Must write f_x before read.\"  )
+            PasoError(\"Must write f_x before read.\"  )
 
         """
         if self.transformed:
@@ -976,9 +1024,11 @@ class pasoFunction(pasoBase):
                 self.f_x.to_parquet(filepath)
                 return True
             else:
-                raise pasoError("must have non-blank filename.")
+                logger.error("must have non-blank filename.")
+                raise PasoError()
         else:
-            raise pasoError("Must predict or transform before write operation.")
+            logger.error("Must predict or transform before write operation.")
+            raise PasoError()
 
     def read(self, filepath=""):
         """
@@ -992,7 +1042,7 @@ class pasoFunction(pasoBase):
                 If ``filepath``is blank then last valid ``filepath`` will be used.
 
         Raises:
-            pasoError(\"Must write f_x before read.\"  )
+            PasoError(\"Must write f_x before read.\"  )
         """
         if filepath != "":
             self.save_file_name = filepath
@@ -1000,7 +1050,8 @@ class pasoFunction(pasoBase):
             self.f_x = pd.read_parquet(self.save_file_name)
             return self.f_x
         else:
-            raise pasoError("Must write f_x before read.")
+            logger.error("Must write f_x before read.")
+            raise PasoError()
 
     def transform(self, *args, **kwargs):
         """
@@ -1017,8 +1068,6 @@ class pasoFunction(pasoBase):
             f(X:) (dataframe)
         """
         raise NotImplementedError
-
-
 
 
 def is_Series(X):
@@ -1126,9 +1175,10 @@ class toDataFrame(pasoFunction):
         # for now inplace ignored
         X = Xarg.copy()
         if len(X) == 0:
-            raise ValueError(
+            logger.error(
                 "toDataFrame:transform:X: is of length O: {} ".format(str(type(X)))
             )
+            raise PasoError()
 
         self.labels = labels
 
@@ -1136,11 +1186,12 @@ class toDataFrame(pasoFunction):
             pass
         elif type(X) == np.ndarray:
             if X.ndim != 2:
-                raise TypeError(
+                logger.error(
                     "toDataFrame:transform:np.array X: wrong imension. must be 2: {} ".format(
                         str(X.ndim)
                     )
                 )
+                raise PasoError()
             if labels == []:
                 for i in range(X.shape[1]):
                     self.labels.append("c_" + str(i))
@@ -1148,30 +1199,37 @@ class toDataFrame(pasoFunction):
             # if someone passes a nested list or tuple of labels, well i am nt going to check
             self.labels = ["c_0"]
         else:
-            raise ValueError(
+            logger.error(
                 "S_toDataFrame:transform:X: is of wrong type: {} ".format(str(type(X)))
             )
+            raise ValueError()
 
         X = pd.DataFrame(X)
         self.f_x = X
         self.transformed = True
         return _new_feature_names(X, self.labels)
 
+
 # makes no sense to save,load or persist toDataframe
+
 
 def _time_required(func):
     timerr = timeit.default_timer
     x = timerr()
-    for i in range(10): func()
+    for i in range(10):
+        func()
     y = timerr()
-    return(y - x)
+    return y - x
+
 
 def _time_required_dask(func):
     timerr = timeit.default_timer
     x = timerr()
-    for i in range(10): func().compute()
+    for i in range(10):
+        func().compute()
     y = timerr()
-    return(y - x)
+    return y - x
+
 
 def dask_pandas_startup_ratio(magnitude=1):
     """
@@ -1194,48 +1252,77 @@ def dask_pandas_startup_ratio(magnitude=1):
 
     from sklearn.datasets import load_boston
     import dask.dataframe as pdd
+
     boston = load_boston()
     City = pd.DataFrame(boston.data, columns=boston.feature_names)
 
-    c = []; m = []
+    c = []
+    m = []
     for power in tqdm(range(magnitude)):
-        scale = 10**power
+        scale = 10 ** power
         bc = pd.concat([City for i in range(int(1.5 * scale))], axis=0)
-        print(type(bc),bc.shape, bc.shape[0] * bc.shape[1])
+        logger.debug((type(bc), bc.shape, bc.shape[0] * bc.shape[1]))
         N = mp.cpu_count()  # theads on this machine
         bcd = pdd.from_pandas(bc, npartitions=N)
 
         t1 = _time_required(bc.count)
         t2 = _time_required(bcd.count)
-        c.append(('count'
-                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
-                  , t1, t2, (round(t1 / t2, 2))))
+        c.append(
+            (
+                "count",
+                round(math.log10(bc.shape[0] * bc.shape[1]), 0),
+                t1,
+                t2,
+                (round(t1 / t2, 2)),
+            )
+        )
 
         t1 = _time_required(bc.sum)
         t2 = _time_required(bcd.sum)
-        c.append(('sum'
-                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
-                  , t1, t2, (round(t1 / t2, 2))))
+        c.append(
+            (
+                "sum",
+                round(math.log10(bc.shape[0] * bc.shape[1]), 0),
+                t1,
+                t2,
+                (round(t1 / t2, 2)),
+            )
+        )
 
         t1 = _time_required(bc.mean)
         t2 = _time_required(bcd.mean)
-        c.append(('mean'
-                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
-                  , t1, t2, (round(t1 / t2, 2))))
+        c.append(
+            (
+                "mean",
+                round(math.log10(bc.shape[0] * bc.shape[1]), 0),
+                t1,
+                t2,
+                (round(t1 / t2, 2)),
+            )
+        )
 
         t1 = _time_required(bc.isnull)
         t2 = _time_required(bcd.isnull)
-        c.append(('isnull'
-                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
-                  , t1, t2, (round(t1 / t2, 2))))
+        c.append(
+            (
+                "isnull",
+                round(math.log10(bc.shape[0] * bc.shape[1]), 0),
+                t1,
+                t2,
+                (round(t1 / t2, 2)),
+            )
+        )
 
-    df = pd.DataFrame(c,columns=['f()','log10(N)','t-pd(s)','t-dask(s)','t-pd/t-dask'])
-    ax = sns.lineplot(x='log10(N)', y='t-pd/t-dask', hue='f()', data=df)
-    ax.set_yscale('log')
-    ax.set_xlabel('Number elements(log10)')
-    ax.set_ylabel('Ratio dask/pandas')
-    plt.plot([4, 8], [1, 1], c='black', linewidth=3)
+    df = pd.DataFrame(
+        c, columns=["f()", "log10(N)", "t-pd(s)", "t-dask(s)", "t-pd/t-dask"]
+    )
+    ax = sns.lineplot(x="log10(N)", y="t-pd/t-dask", hue="f()", data=df)
+    ax.set_yscale("log")
+    ax.set_xlabel("Number elements(log10)")
+    ax.set_ylabel("Ratio dask/pandas")
+    plt.plot([4, 8], [1, 1], c="black", linewidth=3)
     return df
+
 
 def dask_pandas_ratio(magnitude=4):
     """
@@ -1258,46 +1345,74 @@ def dask_pandas_ratio(magnitude=4):
 
     from sklearn.datasets import load_boston
     import dask.dataframe as pdd
+
     boston = load_boston()
     City = pd.DataFrame(boston.data, columns=boston.feature_names)
 
-    c = []; m = []
+    c = []
+    m = []
     for power in tqdm(range(magnitude)):
-#        print(power,10**power)
-        scale = 10**power
+        #        logger.debug((power,10**power)
+        scale = 10 ** power
         bc = pd.concat([City for i in range(int(1.5 * scale))], axis=0)
-#        print(type(bc),bc.shape, bc.shape[0] * bc.shape[1])
+        #        logger.debug((type(bc),bc.shape, bc.shape[0] * bc.shape[1])
         N = mp.cpu_count()  # theads on this machine
         bcd = pdd.from_pandas(bc, npartitions=N)
 
         t1 = _time_required(bc.count)
         t2 = _time_required_dask(bcd.count)
-        c.append(('count'
-                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
-                  , t1, t2, (round(t1 / t2, 2))))
+        c.append(
+            (
+                "count",
+                round(math.log10(bc.shape[0] * bc.shape[1]), 0),
+                t1,
+                t2,
+                (round(t1 / t2, 2)),
+            )
+        )
 
         t1 = _time_required(bc.sum)
         t2 = _time_required_dask(bcd.sum)
-        c.append(('sum'
-                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
-                  , t1, t2, (round(t1 / t2, 2))))
+        c.append(
+            (
+                "sum",
+                round(math.log10(bc.shape[0] * bc.shape[1]), 0),
+                t1,
+                t2,
+                (round(t1 / t2, 2)),
+            )
+        )
 
         t1 = _time_required(bc.mean)
         t2 = _time_required_dask(bcd.mean)
-        c.append(('mean'
-                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
-                  , t1, t2, (round(t1 / t2, 2))))
+        c.append(
+            (
+                "mean",
+                round(math.log10(bc.shape[0] * bc.shape[1]), 0),
+                t1,
+                t2,
+                (round(t1 / t2, 2)),
+            )
+        )
 
         t1 = _time_required(bc.isnull)
         t2 = _time_required_dask(bcd.isnull)
-        c.append(('isnull'
-                  , round(math.log10(bc.shape[0] * bc.shape[1]), 0)
-                  , t1, t2, (round(t1 / t2, 2))))
+        c.append(
+            (
+                "isnull",
+                round(math.log10(bc.shape[0] * bc.shape[1]), 0),
+                t1,
+                t2,
+                (round(t1 / t2, 2)),
+            )
+        )
 
-    df = pd.DataFrame(c,columns=['f()','log10(N)','t-pd(s)','t-dask(s)','t-pd/t-dask'])
-    ax = sns.lineplot(x='log10(N)', y='t-pd/t-dask', hue='f()', data=df)
-    ax.set_yscale('log')
-    ax.set_xlabel('Number elements(log10)')
-    ax.set_ylabel('Ratio dask/pandas')
-    plt.plot([4, 8], [1, 1], c='black', linewidth=3)
+    df = pd.DataFrame(
+        c, columns=["f()", "log10(N)", "t-pd(s)", "t-dask(s)", "t-pd/t-dask"]
+    )
+    ax = sns.lineplot(x="log10(N)", y="t-pd/t-dask", hue="f()", data=df)
+    ax.set_yscale("log")
+    ax.set_xlabel("Number elements(log10)")
+    ax.set_ylabel("Ratio dask/pandas")
+    plt.plot([4, 8], [1, 1], c="black", linewidth=3)
     return df

@@ -4,7 +4,7 @@ import pandas as pd
 # import copy, random
 import numpy as np
 import pytest
-from paso.base import pasoModel, pasoError, _Check_No_NA_Values, Paso
+from paso.base import pasoModel, PasoError, _Check_No_NA_Values, Paso
 from paso.base import is_DataFrame, toDataFrame
 from paso.pre.toDatetimeComponents import toDatetimeComponents
 
@@ -18,7 +18,7 @@ session =  Paso().startup('../../parameters/default-lesson.1.yaml')
 # 1
 def test_df_toDatetimeComponents_Class_transform_WrongArgType():
     g = toDatetimeComponents()
-    with pytest.raises(pasoError):
+    with pytest.raises(PasoError):
         g.transform([1, 2, 3])
 
 
@@ -58,7 +58,7 @@ def test_toDatetimeComponents_passed_All_Components_drop_Date_False(
 # 4
 def test_toDatetimeComponents_with_NA_ValueError(df_small_NA):
     g = toDatetimeComponents()
-    with pytest.raises(pasoError):
+    with pytest.raises(PasoError):
         g.transform(df_small_NA)
 
 
@@ -72,7 +72,7 @@ def test_toDatetimeComponents_passed_Year_Component_drop_Date_True_Default(
         dt[feature] = pd.to_datetime(
             dt[feature], exact=True, errors="ignore", infer_datetime_format=True
         )
-    with pytest.raises(pasoError):
+    with pytest.raises(PasoError):
         h.transform(dt, components=["Year"])
 
 
@@ -145,7 +145,7 @@ def test_toDatetimeComponents_passed_DoY_Elapsed_IME_Components_drop_Date_False(
 # 10
 def test_df_toDatetimeComponents_write_bad():
     g = toDatetimeComponents()
-    with pytest.raises(pasoError):
+    with pytest.raises(PasoError):
         g.write()
 
 
@@ -159,7 +159,7 @@ def test_df_toDatetimeComponents_write(df_small_no_NA):
 # 12
 def test_df_toDatetimeComponents_read_bad_path():
     g = toDatetimeComponents()
-    with pytest.raises(pasoError):
+    with pytest.raises(PasoError):
         g.read()
 
 

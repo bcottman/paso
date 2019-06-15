@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import pytest
 
-from paso.base import pasoFunction, pasoError, toDataFrame
+from paso.base import PasoError, toDataFrame
 
 def test_paso_Class_init_BadArg():
     with pytest.raises(TypeError):
@@ -18,7 +18,7 @@ def test_paso_2d_numpy_labels_default(X, cn):
 #4
 def test_paso_1d_numpy_bad_arg(y,cn):
     g = toDataFrame()
-    with pytest.raises(TypeError):
+    with pytest.raises(PasoError):
         g.transform(y)
 #5
 def test_paso_2d_named_too_many_args(X, cnv):
@@ -38,7 +38,7 @@ def test_paso_Blank_Arg_Transform():
 #8
 def test_paso_Empty_list_Arg_Transform():
     g = toDataFrame()
-    with pytest.raises(ValueError):
+    with pytest.raises(PasoError):
         g.transform([])
 #9
 def test_paso_3dArray_numpy(X):
@@ -62,7 +62,7 @@ def test_toDataFrame_load_not_implemented():
 #13
 def test_toDataFrame_write_before_transform_error():
     ins = toDataFrame()
-    with pytest.raises(pasoError):
+    with pytest.raises(PasoError):
         ins.write('nofilepath')
 #14
 def test_toDataFrame_write_before_transform_error(X):

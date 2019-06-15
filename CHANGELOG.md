@@ -1,12 +1,34 @@
 # paso changelog
 
+## 0.3.1
+
+2019-06-07
+
+### Added
+- added Encoder
+
+## 0.3.0
+
+2019-06-05
+
+### Added
+- added Scaler
+
 ## 0.2.1.alpha
+
+2019-04-28
+
+### Added
 - reran all tests
 - created package at pypi
 
 ## 0.2.0
 
 2019-04-10
+
+### Added
+
+- refactor with decorators ModelWrap and FunctionWrap
 
 ### Added
 

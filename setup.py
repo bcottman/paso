@@ -2,7 +2,7 @@ from setuptools import setup,find_packages
 
 setup(name='paso',
       packages=find_packages(),
-      version='0.3.0',
+      version='0.3.1',
       description='A python package for data wrangling for models.',
       long_description= """
 **paso** is a set of function and class method operations for data wrangling Machine
@@ -49,6 +49,7 @@ step, you need to set-up your local **paso** development environment. Code, Docu
       license='MIT',
       install_requires=[
           'attrdict>=2.0.1',
+          'category_encoders>=2.0.0',
           'ipython>=6.4.0',
           'numpy>=1.14.0',
           'numba>=0.40.0',
