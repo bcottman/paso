@@ -1,0 +1,29 @@
+project: Common Ground Soltions/paso
+
+name: lesson.3
+description:
+
+# Execution
+cpu_n: 12
+threads_n: 24
+gpu_n: 2
+
+cross-validation:
+  cv_n: 5
+  shuffle: 1
+
+train_test_split:
+  test_size: 0.2
+  stratify: True
+
+model: RandomForest
+RandomForest_methods:
+  predict: predict
+  predict-alternate: predicta
+RandomForest_kwargs:
+  n_estimators: 100
+  n_jobs: -1
+
+
+
+

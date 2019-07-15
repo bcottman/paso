@@ -204,9 +204,17 @@ def df_City():
     from sklearn.datasets import load_boston
     boston = load_boston()
     City = pd.DataFrame(boston.data, columns=boston.feature_names)
-    #    City = City[['CRIM', 'INDUS','NOX','TAX','B']]
-    #    City['MEDV'] = boston.target
+    City['MEDV'] = boston.target
     return (City.copy())
+
+@pytest.fixture()
+def flower():
+    from sklearn.datasets import load_iris
+    iris = load_iris()
+    Flower = pd.DataFrame(iris.data, columns=iris.feature_names)
+    Flower['TypeOf'] = iris.target
+    return (Flower.copy())
+
 
 dates =[
     '6/7/05 7:00',

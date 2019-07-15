@@ -4,7 +4,7 @@ warnings.filterwarnings("ignore")
 import pytest
 
 # paso imports
-from paso.base import pasoError,Paso
+from paso.base import PasoError,Paso
 from paso.pre.toCategory import toCategory
 
 #
@@ -15,14 +15,14 @@ session =  Paso().startup('../../parameters/default-lesson.1.yaml')
 # 1
 def test_toCategory_no_passed_arg_type_error(df_type_low_V11):
     g = toCategory()
-    with pytest.raises(pasoError):
+    with pytest.raises(PasoError):
         g.transform()
 
 
 # 2
 def test_toCategory_passed_arg_type_error(df_type_low_V11):
     g = toCategory()
-    with pytest.raises(pasoError):
+    with pytest.raises(PasoError):
         g.transform(0)
 
 

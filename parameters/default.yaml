@@ -1,8 +1,19 @@
 project: Common Ground Solutions/paso
 
-name: paso
+name: default
 model-methods: []
 function-methods: [log,parameters,transform,traun,predict,read,write,load,save]
-parameter_directory_path: '../parameters/'
-experiment_environment: 'lesson.1'
+
+# Executioon
+cpu_n: 12
+threads_n: 24
+gpu_n: 2
+
+cv_n: 5
+shuffle: 1
+
+layer-1:
+  layer-2: value
+
+
 

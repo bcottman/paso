@@ -1,3 +1,8 @@
+project: Common Ground Solutions/paso
+
+model-methods: []
+function-methods: [log,parameters,transform,traun,predict,read,write,load,save]
+
 project: Common Ground Soltions/paso
 
 name: lesson.1

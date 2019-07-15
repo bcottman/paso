@@ -11,6 +11,7 @@ from tqdm import tqdm
 from paso.base import pasoFunction, pasoDecorators
 from loguru import logger
 import sys
+
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -51,7 +52,7 @@ class toCategory(pasoFunction):
         validate_bool_kwarg(verbose, "verbose")
         self.verbose = verbose
 
-    @pasoDecorators.TransformWrap
+    @pasoDecorators.TransformWrap()
     def transform(
         self, Xarg, inplace=False, boolean=True, integer=True, objects=True, **kwargs
     ):

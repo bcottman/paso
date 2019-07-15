@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import pytest
 
-from paso.base import PasoError, toDataFrame
+from paso.base import PasoError, Param, Paso,Log
 
 def test_paso_Class_init_BadArg():
     with pytest.raises(TypeError):
