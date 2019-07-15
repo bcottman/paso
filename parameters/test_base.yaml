@@ -1,0 +1,12 @@
+project: Common Ground Solutions/paso
+name: test
+description:
+
+HW_platform:
+  cpu_n: 12
+  threads_n: 24
+  gpu_n: 2
+
+layer-1:
+  layer-2: 5
+

@@ -1,5 +1,23 @@
 # paso changelog
 
+## 0.3.2
+
+2019-07-14
+
+### Added
+lesson-1.ipynb
+logging-parameter.ipynb
+lesson-2.ipynb
+lesson-3.ipynb
+added inputers
+added learners/rf
+updated scalers
+changed base to be synched with lesson-1
+changed cleaning to be synched with lesson-2
+added impute to clearners
+renamed EliminateUnviableFeatures.py to cleaning.py
+Param - eliminated need for bootstrap file
+
 ## 0.3.1
 
 2019-06-07

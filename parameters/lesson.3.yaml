@@ -1,0 +1,48 @@
+model-functions: []
+function-methods: [log,parameters,transform,train,predict,read,write,load,save]
+
+project: Common Ground Soltions/paso
+name: lesson.3
+description:
+
+# pipeline: 0  # when multiple piplines supported
+
+HW_platform:
+  cpu_n: 12
+  threads_n: 24
+  gpu_n: 2
+
+models: [RandomForest]
+
+RandomForest:
+  type: Classification
+  inplace: False
+  verbose: True
+  cv: 1
+  average_rounds: 100
+  metric: True
+# inplace : False ## ignored
+  valid: True
+  dataset: iris
+  target: TypeOf
+  predict: predict
+  predict-alternate: predicta
+  metric: class
+  model_kwargs:
+    n_estimators: 100
+    n_jobs: -1
+  train_test_split_kwargs:
+    test_size: 0.25 # set to zero to turn off
+    random_state: 44   #set to int to reproducile over cv, average_rounds should be 1
+    shuffle: True
+    stratify: True
+  cross-validation:
+    cv_n: 5
+    shuffle: 1
+
+ensemble:
+
+# pipeline: 1  # when multiple piplines supported
+
+
+

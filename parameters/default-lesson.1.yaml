@@ -1,8 +1,0 @@
-project: Common Ground Solutions/paso
-
-name: paso
-model-methods: []
-function-methods: [log,parameters,transform,traun,predict,read,write,load,save]
-parameter_directory_path: '../../parameters/'
-experiment_environment: 'lesson.1'
-

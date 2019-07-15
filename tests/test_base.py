@@ -1,10 +1,7 @@
 import pytest
 #
-from paso.base import pasoFunction, pasoModel,pasoError
 from paso.base import Paso, Param, Log
-from paso.base import dask_pandas_ratio
-import loguru as logger
-#from attrdict import AttrDict
+from attrdict import AttrDict
 
 
 def test_paso_count_init():
@@ -19,16 +16,18 @@ def test_paso_namePaso():
     assert Log.log_names == {'paso': 'On'}
 
 def test_paso_claas_Paso():
-    assert str(type(    Paso().startup())) == "<class 'paso.base.Paso'>"
+    assert str(type( Paso().startup())) == "<class 'paso.base.Paso'>"
 
 def test_paso_logger_return():
-    Paso().startup()
-    assert Param().parameters_D == {'project': 'Common Ground Soltions/paso', 'name': 'lesson.1'
-        , 'cpu_n': 12, 'threads_n': 24, 'gpu_n': 2, 'cv_n': 5, 'shuffle': 1, 'layer-1': {'layer-2': 'value'}}
+    Paso(parameters_filepath='../parameters/test_base.yaml').startup()
+    assert Param.parameters_D ==AttrDict({'project': 'Common Ground Solutions/paso'
+                                             , 'name': 'test', 'description': None
+                                             , 'HW_platform': {'cpu_n': 12, 'threads_n': 24, 'gpu_n': 2}
+                                             , 'layer-1': {'layer-2': 5}})
 
 def test_parm_default():
-    Paso().startup()
-    assert Param().parameters_D['project'] == 'Common Ground Soltions/paso'
+    Paso(parameters_filepath='../parameters/test_base.yaml').startup()
+    assert Param.parameters_D['project'] == 'Common Ground Solutions/paso'
 
 def test_parm_file_error():
     with pytest.raises(ValueError):

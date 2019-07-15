@@ -6,7 +6,12 @@ __license__ = "MIT License"
 from abc import ABC
 
 ""
-# todo: insert dask datatypes all over
+# todo: switch over from keyword API to parameter file
+# todo: support RAPID in parm file
+# todo: support multiple pipelines in parm file
+# todo:enable parrallel exec of parm files
+
+
 from loguru import logger
 import pydot_ng as pydot
 from IPython.display import Image, display
@@ -17,7 +22,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sns
 import pandas as pd
-from pandas.core.dtypes.generic import ABCDataFrame, ABCIndexClass, ABCSeries
+from pandas.core.dtypes.generic import ABCDataFrame
 from pandas.util._validators import validate_bool_kwarg
 import multiprocessing as mp
 import timeit, math
@@ -33,8 +38,683 @@ warnings.filterwarnings("ignore")
 class PasoError(Exception):
     pass
 
+def raise_PasoError(msg):
+    logger.error(msg)
+    raise PasoError(msg)
 
-########## logger
+def _isAttribute(object, attribute_string):
+    return (hasattr(object, attribute_string))
+
+
+def is_Series(X):
+    """
+    Parameters:
+        X (any type)
+
+    Returns:
+        True (boolean) if DataFrame Series type.
+        False (boolean) otherwise
+    """
+    return type(X) == pd.core.series.Series
+
+
+def is_DataFrame(X):
+    """
+    Parameters:
+        X (any type)
+
+    Returns:
+        True (boolean) if DataFrame type.
+        False (boolean) otherwise
+    """
+    return (type(X) == pd.core.frame.DataFrame or type(X) == pandas.core.series.Series)
+
+
+def _new_feature_names(X, labels):
+    if labels == []:
+        return X
+    c = list(X.columns)
+    if type(labels) == list:
+        c[0 : len(labels)] = labels
+    else:
+        c[0:1] = [labels]
+    X.columns = c
+    return X
+
+# must be dataFrame or series
+def _check_is_DataFrame(X):
+    if is_DataFrame(X):
+        return True
+    else:
+        raise_PasoError(
+            "TransformWrap:Xarg must be if type DataFrame. Was type:{}".format(type(X)))
+
+def _Check_No_NA_F_Values(df, feature):
+    if not df[feature].isna().any():
+        return True
+    else:
+        raise_PasoError("Passed dataset, DataFrame, contained NA")
+
+
+def _Check_No_NA_Series_Values(ds):
+    if not ds.isna().any():
+        return True
+    else:
+        raise_PasoError("Passed dataset, DataFrame, contained NA")
+
+def _Check_No_NA_Values(df):
+    for feature in df.columns:
+        if _Check_No_NA_F_Values(df, feature):
+            pass
+        else:
+            pass
+
+def set_modelDict_value(v, at):
+    if at not in object.modelDict.keys():
+        object.modelDict[at] = v
+
+def _dict_value(dict, key, default):
+    if key in dict:
+        return dict[key]
+    else:
+        return default
+
+def _check_non_optional_kw(obj,msg):
+    if obj == None:
+        raise_PasoError(msg)
+    else:
+        return True
+
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestClassifier
+
+### NameToClass class
+class NameToClass:
+    __learnerss__ = {
+        "RandomForest": RandomForestClassifier
+        ,"LinearRegression": LinearRegression
+    }
+
+### pasoDecorators class
+class pasoDecorators:
+    def TransformWrapXy(_Check_No_NAs=True, array=False, wrapInplace=True, narg=3):
+        """
+            Hide most of the paso machinery, so that developer focuses on their function or method.
+
+            Parameters: None
+
+        :return:
+            What the decorated function returns.
+        """
+
+        def decorator(fun):
+            def wrapper(*args, **kwargs):
+                object = args[0]
+
+                if len(args) < narg:
+                    logger.error(
+                        "TransformWrapXy:Must be at least three arguments(self,X,y): ",
+                        args,
+                        kwargs,
+                    )
+                    raise PasoError(
+                        "TransformWrapXy:Must be at least three arguments(self,X,y): ",
+                        args,
+                        kwargs,
+                    )
+                else:
+                    Xarg = args[1]
+                    yarg = args[2]
+
+                object.inplace = True  # default always True
+                # if wrapInplace, ignore any inplace keywords
+                if not wrapInplace:  # if true leave  object.inplace = True
+                    kwa = "inplace"
+                    if kwa in kwargs:
+                        object.inplace = kwargs[kwa]
+                        validate_bool_kwarg(object.inplace, kwa)
+
+                kwa = "drop"
+                if kwa in kwargs:
+                    object.drop = kwargs[kwa]
+                    validate_bool_kwarg(object.drop, kwa)
+
+                kwa = "ignore"
+                if kwa in kwargs:
+                    object.ignore = kwargs[kwa]
+
+                kwa = "remove"
+                if kwa in kwargs:
+                    object.remove = kwargs[kwa]
+
+                # must be dataFrame
+                if is_DataFrame(Xarg):
+                    pass
+                else:
+                    logger.error(
+                        "TransformWrap:Xarg must be if type DataFrame. Was type:{}",
+                        format(type(Xarg)),
+                    )
+                    raise PasoError(
+                        "TransformWrap:Xarg must be if type DataFrame. Was type:{}",
+                        format(type(Xarg)),
+                    )
+                # cached . dont'caclulate again
+                if object.cache and object.transformed:
+                    return object.f_x
+                else:
+                    pass
+                if object.inplace:
+                    X = Xarg
+                    y = yarg
+                else:
+                    X = Xarg.copy()
+                    y = yarg.copy()
+                _Check_No_NA_Values(X)
+                # pre
+                result = [None, None]
+                if array:  # passed pd yurn into npp
+                    result[0], result[1] = fun(
+                        object, X.to_numpy(), y.to_numpy(), **kwargs
+                    )
+                else:
+                    result[0], result[1] = fun(object, X, y ** kwargs)
+                # post
+                object.f_x = result
+                object.transformed = True
+                return result[0], result[1]
+
+            return wrapper
+
+        return decorator
+
+    def TransformWrapnarg(array=False,narg=2):
+        """
+        Hide most of the paso machinery, so that developer focuses on their function or method.
+
+        Parameters:
+            array: (boolean) numpy arrays passed to wrapped function
+            narg: (integer) number of *args of wrapped function
+
+        return:
+            What the decorated function returns.
+        """
+
+        def decorator(fun):
+            def wrapper(*args, **kwargs):
+
+                object = args[0]
+                if len(args) != narg:
+                    raise_PasoError(
+                        "TransformWrap:Must be {} arguments. was:{} ".format(narg,args))
+                # cached . dont'caclulate again
+                if object.cache and object.transformed:
+                    return object.f_x
+                else:
+                    pass
+
+                kwa = 'inplace'  # set in __init__
+                if not _isAttribute(object,kwa):
+                    object.inplace = _dict_value(kwargs, kwa, True)  # default  True
+                    validate_bool_kwarg(object.inplace, kwa)
+
+                #check keywords in passes argument stream
+                # non-optional kw default as None
+                object.verbose = _dict_value(kwargs, "verbose", True)
+                #cleaners kwargs
+                object.drop = _dict_value(kwargs, "drop", [])
+                object.ignore = _dict_value(kwargs, "ignore", [])
+                object.remove = _dict_value(kwargs, "remove", [])
+                object.filename = _dict_value(kwargs, "filename", "")
+                #dataset  keywords
+                object.name = _dict_value(kwargs, "name", '')
+                object.description = _dict_value(kwargs, "description", '')
+                object.dataset = _dict_value(kwargs, "dataset", '')
+                object.target = _dict_value(kwargs, "target", None)
+                object.format = _dict_value(kwargs, "format", None)
+                if object.format != None:
+                    object.formatDict = _dict_value(kwargs, object.format, None)
+                #
+
+                # if in  ontolgicalfile then keyword will have prededence
+                object.ontology_filepath = _dict_value(kwargs, "ontology_filepath", "")
+                ontology_kwargs = None
+                if object.ontology_filepath != "":
+                    ontology_kwargs = Param(object.ontology_filepath).parameters_D
+                    #cleaners kwargs
+                    object.drop = _dict_value(ontology_kwargs, "drop", [])
+                    object.ignore = _dict_value(ontology_kwargs, "ignore", [])
+                    object.remove = _dict_value(ontology_kwargs, "remove", [])
+                    # dataset  keywords
+                    object.name = _dict_value(ontology_kwargs, "name", '')
+                    object.description = _dict_value(ontology_kwargs, "description", '')
+                    object.dataset = _dict_value(ontology_kwargs, "dataset", '')
+                    object.target = _dict_value(ontology_kwargs, "target", None)
+                    object.format = _dict_value(ontology_kwargs, "format", None)
+                    if object.format != None:
+                        object.formatDict = _dict_value(ontology_kwargs, object.format, None)
+
+                if narg == 1 :
+                    result = fun(object, **kwargs)
+                elif len(args) == 2:
+                    if object.inplace:
+                        X = args[1]
+                    else:
+                        X = args[1].copy()
+                    _Check_is_DataFrame(X)
+                    _Check_No_NA_Values(X)
+                    # pre
+                    if array:
+                        result = fun(object, X.to_numpy(), **kwargs)
+                    else:
+                        result = fun(object, X, **kwargs)
+                elif narg == 3:
+                    if object.inplace:
+                        X = args[1]
+                        y = args[2]
+                    else:
+                        X = args[1].copy()
+                        y = args[2].copy()
+                    _Check_is_DataFrame(X)
+                    _Check_is_DataFrame(y)
+                    _Check_No_NA_Values(X)
+                    _Check_No_NA_Values(y)
+                    if array:  # passed pd yurn into npp
+                        result[0], result[1] = fun(
+                            object, X.to_numpy(), y.to_numpy(), **kwargs)
+                    else:
+                        result[0], result[1] = fun(object, X, y ** kwargs)
+                else:
+                    raise_PasoError('4 or greater *args not currenlty supported in TransformWrap')
+                # post
+                object.f_x = result
+                object.transformed = True
+                return result
+            return wrapper
+        return decorator
+
+    def TransformWrap(_Check_No_NAs=True, array=False, narg=2):
+        """
+            Hide most of the paso machinery, so that developer focuses on their function or method.
+
+            Parameters: None
+
+        :return:
+            What the decorated function returns.
+        """
+
+        def decorator(fun):
+            def wrapper(*args, **kwargs):
+                object = args[0]
+                if len(args) != narg:
+                    raise_PasoError(
+                        "TransformWrap:Must be {} arguments. was:{} ".format(narg,args))
+                if len(args) >= 2:
+                    Xarg = args[1]
+
+
+                object.inplace = _dict_value(kwargs, "inplace", True)  # default  True
+                object.drop = _dict_value(kwargs, "drop", [])
+                object.ignore = _dict_value(kwargs, "ignore", [])
+                object.remove = _dict_value(kwargs, "remove", [])
+                object.filename = _dict_value(kwargs, "filename", "")
+
+                # kwa = "drop"
+                # if kwa in kwargs:
+                #     object.drop = kwargs[kwa]
+                #     validate_bool_kwarg(object.drop, kwa)
+
+                # kwa = "ignore"
+                # if kwa in kwargs:
+                #     object.ignore = kwargs[kwa]
+                #
+                # kwa = "remove"
+                # if kwa in kwargs:
+                #     object.remove = kwargs[kwa]
+
+                # must be dataFrame
+                if is_DataFrame(Xarg):
+                    pass
+                else:
+                    raise PasoError(
+                        "TransformWrap:Xarg must be if type DataFrame. Was type:{}",
+                        format(type(Xarg)),
+                    )
+                # cached . dont'caclulate again
+                if object.cache and object.transformed:
+                    return object.f_x
+                else:
+                    pass
+                #passing X
+                if narg >= 2:
+                    if object.inplace:
+                        X = Xarg
+                    else:
+                        X = Xarg.copy()
+
+                    _Check_No_NA_Values(X)
+                    # pre
+                    if array:
+                        result = fun(object, X.to_numpy(), **kwargs)
+                    else:
+                        result = fun(object, X, **kwargs)
+
+                # post
+                object.f_x = result
+                object.transformed = True
+                return result
+
+            return wrapper
+
+        return decorator
+
+    def TransformWrapNoX(_Check_No_NAs=True, array=False, narg=2):
+        """
+            Hide most of the paso machinery, so that developer focuses on their function or method.
+
+            Parameters: None
+
+        :return:
+            What the decorated function returns.
+        """
+
+        def decorator(fun):
+            def wrapper(*args, **kwargs):
+                object = args[0]
+                if len(args) != narg:
+                    raise_PasoError(
+                        "TransformWrapNoX:Must be {} arguments. was:{} ".format(narg,args))
+
+                object.inplace = _dict_value(kwargs, "inplace", True)  # default  True
+                object.filename = _dict_value(kwargs, "filename", "")
+
+                # cached . dont'caclulate again
+                if object.cache and object.transformed:
+                    return object.f_x
+                else:
+                    pass
+                # not passing X
+                if narg == 1:
+                    result = fun(object, **kwargs)
+                # post
+                object.f_x = result
+                object.transformed = True
+                return result
+            return wrapper
+        return decorator
+
+
+    def InitWrap(array=False,narg=1):
+        """
+            Hide most of the paso machinery, so that developer focuses on their function or method.
+
+            Parameters: None
+
+            return:
+                What the decorated function returns.
+
+        """
+
+        def decorator(fun):
+            # i suppose i could of done @wraos for self, but this works
+            def wrapper(*args, **kwargs):
+
+                if len(args) != narg:
+                    PasoError("InitWrap:Must be one arguments (self) ", args, kwargs)
+                object = args[0]
+                fun(object,**kwargs)
+
+            return wrapper
+
+        return decorator
+
+    def TrainWrap(array=False, narg=2):
+        """
+            Hide most of the paso machinery, so that developer focuses on their function or method.
+
+            Parameters:
+                array: (boolean) False
+                    Pass a Pandas dataframe (False) or numpy array=True.  Mainly for compatibility
+                    with scikit which requires arrays.
+
+            Parm/wrap Class Instance attibutes: these are attibutes of object.fun (sef.x) set in this wrapper, if present in Parameter file
+
+                 object.inplace : (CURRENTLY IGNORED)
+                        False (boolean), replace 1st argument with resulting dataframe
+                        True:  (boolean) ALWAYS False
+
+                object.modelKey
+                object.modelDict keys
+                    inplace IGNORED
+                    verbose Default: True
+                    Metric Default: True
+                    valid
+                    dataset
+                    target
+                    predict
+
+            return:
+                What the decorated function returns.
+        """
+
+        def decorator(fun):
+            # i suppose i could of done @wraos for self, but this works
+            def wrapper(*args, **kwargs):
+                object = args[0]
+                if len(args) != narg:
+                    raise_PasoError(
+                        "TrainWrap:Must be {} arguments. was:{} ".format(narg,args))
+                if len(args) == 2:
+                    Xarg = args[1]
+                # must be dataFrame
+                if is_DataFrame(Xarg):
+                    pass
+                else:
+
+                    raise PasoError(
+                        "TrainWrap:Xarg must be if type DataFrame. Was type:{}",
+                        format(type(Xarg)),
+                    )
+                _Check_No_NA_Values(Xarg)
+
+                object.Xcolumns = Xarg.columns
+
+                object.modelKey = None
+                object.modelDict = None
+                object.inplace = False
+                # todo support model as model list
+                if "models" not in Param.parameters_D:
+                    raise PasoError(
+                        "models keyword not found in Parm file: {}".format(
+                            Param.parameters_D.keys()
+                        )
+                    )
+
+                if type(Param.parameters_D["models"]) != type([]):
+                    raise PasoError(
+                        "models keyword must be list: {}".format(
+                            Param.parameters_D["models"]
+                        )
+                    )
+
+                for modelKey in Param.parameters_D["models"]:
+
+                    object.modelKey = modelKey
+
+                    if object.modelKey not in Param.parameters_D:
+                        raise PasoError(
+                            "TrainWrap: No model named: {} not found in Parm file: {}".format(
+                                object.modelKey, Param.parameters_D.keys()
+                            )
+                        )
+
+                    if object.modelKey not in NameToClass.__learners__:
+                        raise PasoError(
+                            "TrainWrap: No model named: {} not in mode;: {}".format(
+                                object.modelKey, NameToClass.__learners_.keys()
+                            )
+                        )
+
+                    object.model = NameToClass.__learners__[object.modelKey]
+
+                    if type(Param.parameters_D[object.modelKey]) != type({}):
+                        raise PasoError(
+                            "TrainWrap: No model named: {} not type dict: {}".format(
+                                object.modelKey,
+                                type(Param.parameters_D[object.modelKey]),
+                            )
+                        )
+
+                    object.modelDict = Param.parameters_D[object.modelKey]
+
+                    set_modelDict_value(True, "verbose")
+                    set_modelDict_value(1, "cv")
+                    set_modelDict_value(1, "average_rounds")
+                    set_modelDict_value(True, "metric")
+                    set_modelDict_value(False, "valid")
+                    set_modelDict_value(None, "dataset")
+                    set_modelDict_value(None, "target")
+                    set_modelDict_value(None, "predict")
+
+                    if "model_kwargs" in object.modelDict.keys():
+                        __learners__list_index = 1
+                        object.model = NameToClass.__learners__[object.modelKey][
+                            __learners__list_index
+                        ](**object.modelDict["model_kwargs"])
+                    else:
+                        if object.modelDict["valid"]:
+                            logger.warning(
+                                "model_kwargs not specified for model: {}".format(
+                                    object.modelKey
+                                )
+                            )
+
+                    if object.modelDict["valid"]:
+                        if "train_test_split_kwargs" in object.modelDict.keys():
+                            object.train_test_split_kwargs = object.modelDict[
+                                "train_test_split_kwargs"
+                            ]
+
+                        else:
+                            raise PasoError(
+                                "train_test_split_kwargs key not specified in: {}".format(
+                                    Param.parameters_D.keys()
+                                )
+                            )
+                        if object.modelDict["target"] != None:
+                            if object.modelDict["target"] in object.Xcolumns:
+                                object.y_train = Xarg[
+                                    object.modelDict["target"]
+                                ].to_numpy()
+                                object.X_train = Xarg[
+                                    Xarg.columns.difference(
+                                        [object.modelDict["target"]]
+                                    )
+                                ].to_numpy()
+                                if (
+                                    "stratify" in object.train_test_split_kwargs
+                                    and object.train_test_split_kwargs["stratify"]
+                                    != "None"
+                                ):
+                                    object.train_test_split_kwargs[
+                                        "stratify"
+                                    ] = object.y_train
+                            else:
+                                PasoError(
+                                    "trainwrap: unknown target:{} in {}".format(
+                                        object.modelDict["target"], object.Xcolumns
+                                    )
+                                )
+                        elif object.modelDict["target"] == None:
+                            logger.warning(
+                                "target not specified. train_test_split is not called for model: {}".format(
+                                    object.modelKey
+                                )
+                            )
+                        else:
+                            logger.warning(
+                                "valid=False, train_test_split is NOT CALLED for model: {}".format(
+                                    object.modelKey
+                                )
+                            )
+                    else:
+                        logger.warning(
+                            "valid not specified in: {}".format(object.modelDict.keys())
+                        )
+
+                    if array:
+
+                        result = fun(object, Xarg.to_numpy(), **kwargs)
+                    else:
+                        result = fun(object, Xarg, **kwargs)
+                # post
+                object.trained = True
+                return result
+
+            return wrapper
+
+        return decorator
+
+    def PredictWrap(array=False, narg=2):
+        """
+            Hide most of the paso machinery, so that developer focuses on their function or method.
+
+            Parameters:
+                array: )(boolean) False
+                    Pass a Pandas dataframe (False) or numpy arrayTrue).  Mainly for compatibility
+                    with scikit which requires arrays,
+        :return:
+            What the decorated function returns.
+        """
+
+        def decorator(fun):
+            # i suppose i could of done @wraos for self, but this works
+            def wrapper(*args, **kwargs):
+                object = args[0]
+                if len(args) != narg:
+                    raise_PasoError(
+                        "PredictWrap:Must be {} arguments. was:{} ".format(narg,args))
+                if len(args) == 2:
+                    Xarg = args[1]
+
+                if object.trained == False:
+                    raise PasoError(
+                        "PredictWrap:Must call train before predict.", args, kwargs
+                    )
+
+                # must be dataFrame
+                if is_DataFrame(Xarg):
+                    pass
+                else:
+                    raise PasoError(
+                        "PredictWrap:Xarg must be if type DataFrame. Was type:{}",
+                        format(type(Xarg)),
+                    )
+                # cached . dont'caclulate again
+                if object.cache and object.predicted:
+                    return object.f_x
+                else:
+                    pass
+
+                _Check_No_NA_Values(Xarg)
+
+                if array:
+                    result = fun(object, Xarg.to_numpy(), **kwargs)
+                    object.f_x = pd.DataFrame(result, columns=Xarg.columns)
+                else:
+                    result = fun(object, Xarg, **kwargs)
+                    result.columns = Xarg.columns
+                    object.f_x = result
+
+                object.predicted = True
+                return object.f_x
+
+            return wrapper
+
+        return decorator
+
+
+### log class
 class Log(object):
     """
         Fetch existing ``paso`` log instance.
@@ -51,8 +731,9 @@ class Log(object):
     count = 0
     additional_log_files = {}
 
-    def __init__(self):
+    def __init__(self, verbose=True):
         self.sink_stdout = None
+        self.verbose = verbose
 
     def log(self, log_name="paso", log_file=""):
         """
@@ -61,7 +742,21 @@ class Log(object):
 
 
         Parameters:
-            log_name (str) 'paso'
+            log_name (string) Top level title used un logger
+                default:  'paso'
+
+       Class Attributes:
+            log_ids
+                init: {}
+            log_names
+                init: {}
+            count = 0
+                init: 0
+            additional_log_files
+                init: {}
+
+        filepath :
+            default: ../parameters/default.yaml
 
         Returns:
             ``loguru`` object instance
@@ -73,8 +768,7 @@ class Log(object):
                 paso 4.6.2019 12:16:19 INFO ========================================
                 paso 4.6.2019 12:16:19 INFO Read in parameter file: ../parameters/default.yaml``
             >>> x =1
-            >>> logger.debug("x:{}".format(x))
-                ``paso 4.6.2019 13:01:26 DEBUG x:1``
+            >>> logger.info("x:{}".format(x))
 
         """
 
@@ -95,7 +789,8 @@ class Log(object):
 
             Log.log_names[log_name] = "On"
             Log.log_ids[log_name] = self.sink_stdout
-            logger.debug("Log started")
+            if self.verbose:
+                logger.info("Log started")
 
         return self
 
@@ -105,26 +800,39 @@ class Log(object):
         Log.additional_log_files[log_file] = logger.add(
             log_file, format=log_name + " {time:D.M.YYYY HH:mm:ss} {level} {message}"
         )
-        logger.info("Logging also to file:{}".format(log_file))
+        if self.verbose:
+            logger.info("Logging also to file:{}".format(log_file))
         return self
 
 
+### Param class
 class Param(object):
     """
     Read in from file(s) the parameters for this service.
-    Currently the __init__ will read in default.yml which sets the
-    data_environment parameter. In future top level parameters are set
-    so this class can bootstrap to other more environment specialized files.
-    currently need only:
 
         default.yml
         experiment-1 (optional)
+        ....         (optional)
+
+        Class Attributes:
+
+            Param.filepath
+                init: None
+
+            Param.parameters_D  (dict) Parameter dictionary resulting from reading in ``filepath``.
+                init: None
+
+
+            Setting Class attribute to ``None`` means it initialized by whatever method set it.
 
     """
 
-    def __init__(self, filepath=""):
+    gfilepath = None
+    parameters_D = None
+
+    def __init__(self, filepath="", verbose=True):
         """
-        Bootstrap parameter files.
+        Read-in a parameter file on ``filepath`.
 
         Parameters:
             None
@@ -134,14 +842,14 @@ class Param(object):
 
         Note:
             Currently bootstrap to <name>.yaml or from attribute ``experiment_environment``
-            from default ``../parameters/default.yaml` thus any <na00me>.yaml can be used
+            from default ``../parameters/default.yaml``  thus any <na00me>.yaml can be used
             without change to current code. Only new code need be added to
             support <nth name>.yaml.
 
             Notice instance is different on call to class init but resulting
             parameter dictionary is always the same as the file specified by
             parameter  ``experiment_environment``. This means class parameters
-            can be called from anywhere to give the same parameters and values.
+            can be called from anywhere to give the same parameters and values. so long a Parm file path
 
             It also means if dafault.yaml or underlying file specified by
             `experiment_environment`` is changed, parameters class instance is set
@@ -149,32 +857,20 @@ class Param(object):
 
         Example:
 
-            >>> p = Param().parameter_D
+            >>> p = Param.parameter_D
             >>> p['a key']
 
         """
-        self.parameters_D = None
-        default_D = self._read_parameters(filepath)
-
-        if (
-            "experiment_environment" in default_D
-            and "parameter_directory_path" in default_D
-        ):
-            self.parameters_D = self._read_parameters(
-                default_D["parameter_directory_path"]
-                + default_D["experiment_environment"]
-                + ".yaml"
-            )
-        else:
-            raise NameError(
-                "read_parameters: experiment_environment does not exist(read from default.yaml):{}".format(
-                    default_D
-                )
-            )
-
-    def _read_parameters(self, filepath):
         if filepath == "":
             filepath = "../parameters/default.yaml"
+
+        if Param.gfilepath != filepath:
+            Param.gfilepath = filepath
+            Param.parameters_D = self._read_parameters(filepath)
+            self.parameters_D = Param.parameters_D
+#           logger.debug( self.parameters_D )
+
+    def _read_parameters(self, filepath):
         if os.path.exists(filepath):
             with open(filepath) as f:
                 config = yaml.load(f)
@@ -185,18 +881,32 @@ class Param(object):
             )
 
 
+### Paso class
 class Paso(object):
     """
+    Creates
         1. Log: default name paso
         2. parameter file : default: '../parameters/default.yaml'
         3. list of pasoes invoked.
 
-        Param:
+        Parameters:
             log_name (str) 'paso'
             verbose: (boolean) True
+
+        Class Attributes:
+            pipeLine (list)
+                init: []
+
+        Class Instance Attributes::
+            self.parameters = None
+            self.log_name = log_name
+            self.log_file = log_file
+            validate_bool_kwarg(verbose, "verbose")
+            self.verbose = verbose
+
     """
 
-    pipe_pasos = []
+    pipeLine = []
 
     def __init__(
         self, verbose=True, log_name="paso", log_file="", parameters_filepath=""
@@ -208,6 +918,7 @@ class Paso(object):
             self.parameters_filepath = "../parameters/default.yaml"
         else:
             self.parameters_filepath = parameters_filepath
+
         self.parameters = None
         self.log_name = log_name
         self.log_file = log_file
@@ -259,22 +970,23 @@ class Paso(object):
     def parameters_filepath(self):
         return self._parameters_filepath
 
-    @parameters.setter
+    @parameters_filepath.setter
     def parameters_filepath(self, value):
         self._parameters_filepath = value
 
     def startup(self):
-        Log().log(log_name=self._log_name, log_file=self._log_file)
-        logger.debug("========================================")
-        Param(filepath=self._parameters_filepath)
+        Log(verbose=self.verbose).log(log_name=self._log_name, log_file=self._log_file)
         if self.verbose:
-            logger.debug("Read in parameter file: {}".format(self.parameters_filepath))
+            logger.info("========================================")
+        Param(filepath=self.parameters_filepath, verbose=self.verbose)
+        if self.verbose:
+            logger.info("Read in parameter file: {}".format(self.parameters_filepath))
         #        self.flush()
-        Paso.pipe_pasos.append(["Startup Paso", "square", " "])
+        Paso.pipeLine.append(["Startup Paso", "square", " "])
         return self
 
     def shutdown(self):
-        Paso.pipe_pasos.append(["Shutdown Paso", "square", " "])
+        Paso.pipeLine.append(["Shutdown Paso", "square", " "])
         if "paso" in Log.log_names:
             del Log.log_names["paso"]
         if "paso" in Log.log_ids:
@@ -346,192 +1058,7 @@ class Paso(object):
         return graph
 
 
-def _Check_No_NA_F_Values(df, feature):
-
-    if not df[feature].isna().any():
-        return True
-    else:
-        raise PasoError("Passed dataset, 1st arg, contained NA")
-        return False
-
-
-def _Check_No_NA_Values(df):
-    #    import pdb; pdb.set_trace() # debugging starts here
-    for feature in df.columns:
-        if _Check_No_NA_F_Values(df, feature):
-            pass
-        else:
-            return False
-    return True
-
-
-class PasoError(Exception):
-    pass
-
-
-class pasoDecorators:
-    def TransformWrap(fun):
-        """
-            Hide most of the paso machinery, so that developer focuses on their function or method.
-
-            Parameters: None
-
-        :return:
-            What the decorated function returns.
-        """
-        # i suppose i could of done @wraos for self, but this works
-        def wrapper(*args, **kwargs):
-            object = args[0]
-            if len(args) < 2:
-                raise PasoError(
-                    "TransformWrap:Must be at least two arguments: ", args, kwargs
-                )
-            else:
-                Xarg = args[1]
-            object.inplace = False
-            object.drop = False
-            kwa = "inplace"
-            if kwa in kwargs:
-                object.inplace = kwargs[kwa]
-                validate_bool_kwarg(object.inplace, kwa)
-            kwa = "drop"
-            if "drop" in kwargs:
-                object.drop = kwargs[kwa]
-                validate_bool_kwarg(object.drop, kwa)
-            # must be dataFrame
-            if is_DataFrame(Xarg):
-                pass
-            else:
-                raise PasoError(
-                    "TransformWrap:Xarg must be if type DataFrame. Was type:{}",
-                    format(type(Xarg)),
-                )
-            # cached . dont'caclulate again
-            if object.cache and object.transformed:
-                return object.f_x
-            else:
-                pass
-            if object.inplace:
-                X = Xarg
-            else:
-                X = Xarg.copy()
-            _Check_No_NA_Values(X)
-            # pre
-            fun(object, X, **kwargs)
-            # post
-            object.f_x = X
-            object.transformed = True
-            return X
-
-        return wrapper
-
-    def TrainWrap(array=False):
-        """
-            Hide most of the paso machinery, so that developer focuses on their function or method.
-
-            Parameters:
-                array: )(boolean) False
-                    Pass a Pandas dataframe (False) or numpy arrayTrue).  Mainly for compatibility
-                    with scikit which requires arrays,
-        :return:
-            What the decorated function returns.
-        """
-
-        def decorator(fun):
-            # i suppose i could of done @wraos for self, but this works
-            def wrapper(*args, **kwargs):
-                object = args[0]
-                if len(args) < 2:
-                    raise PasoError(
-                        "TransformWrap:Must be at least two arguments (self,X): ",
-                        args,
-                        kwargs,
-                    )
-                else:
-                    Xarg = args[1]
-                # must be dataFrame
-                if is_DataFrame(Xarg):
-                    pass
-                else:
-                    raise PasoError(
-                        "TrainWrap:Xarg must be if type DataFrame. Was type:{}",
-                        format(type(Xarg)),
-                    )
-                _Check_No_NA_Values(Xarg)
-                # pre
-                if array:
-                    fun(object, Xarg.to_numpy(), **kwargs)
-                else:
-                    fun(object, Xarg, **kwargs)
-                # post
-                object.trained = True
-                return object  # returnes self
-
-            return wrapper
-
-        return decorator
-
-    def PredictWrap(array=False):
-        """
-            Hide most of the paso machinery, so that developer focuses on their function or method.
-
-            Parameters:
-                array: )(boolean) False
-                    Pass a Pandas dataframe (False) or numpy arrayTrue).  Mainly for compatibility
-                    with scikit which requires arrays,
-        :return:
-            What the decorated function returns.
-        """
-
-        def decorator(fun):
-            # i suppose i could of done @wraos for self, but this works
-            def wrapper(*args, **kwargs):
-                object = args[0]
-                if len(args) < 2:
-                    raise PasoError(
-                        "PredictWrap:Must be at least two arguments: ", args, kwargs
-                    )
-                else:
-                    Xarg = args[1]
-                if object.trained == False:
-                    raise PasoError(
-                        "PredictWrap:Must call train before predict.", args, kwargs
-                    )
-                object.inplace = False
-                kwa = "inplace"
-                if kwa in kwargs:
-                    object.inplace = kwargs[kwa]
-                    validate_bool_kwarg(object.inplace, kwa)
-                # must be dataFrame
-                if is_DataFrame(Xarg):
-                    pass
-                else:
-                    raise PasoError(
-                        "TransformWrap:Xarg must be if type DataFrame. Was type:{}",
-                        format(type(Xarg)),
-                    )
-                # cached . dont'caclulate again
-                if object.cache and object.predicted:
-                    return object.f_x
-                else:
-                    pass
-                _Check_No_NA_Values(Xarg)
-                if array:
-                    arr = fun(object, Xarg.to_numpy(copy=True), **kwargs)
-                    object.f_x = pd.DataFrame(arr, columns=Xarg.columns)
-                else:
-                    df = fun(object, Xarg.to_numpy(copy=True), **kwargs)
-                    df.columns = Xarg.columns
-                    object.f_x = df
-
-                object.predicted = True
-                return object.f_x
-
-            return wrapper
-
-        return decorator
-
-
+### pasoBase class
 class pasoBase(ABC):
     """
     pasoBaseClass is a base class for creating a **paso**, which is
@@ -716,6 +1243,7 @@ class pasoBase(ABC):
         return self
 
 
+### PasoModel class
 class pasoModel(pasoBase):
     """
     For model only.
@@ -949,6 +1477,7 @@ class pasoModel(pasoBase):
         raise NotImplementedError
 
 
+### pasoFuction class
 class pasoFunction(pasoBase):
     """
     For transform functions ``f(x)`` only.
@@ -1070,42 +1599,8 @@ class pasoFunction(pasoBase):
         raise NotImplementedError
 
 
-def is_Series(X):
-    """
-    Parameters:
-        X (any type)
-
-    Returns:
-        True (boolean) if DataFrame Series type.
-        False (boolean) otherwise
-    """
-    return type(X) == pd.core.series.Series
-
-
-def is_DataFrame(X):
-    """
-    Parameters:
-        X (any type)
-
-    Returns:
-        True (boolean) if DataFrame type.
-        False (boolean) otherwise
-    """
-    return type(X) == pd.core.frame.DataFrame
-
-
-def _new_feature_names(X, labels):
-    if labels == []:
-        return X
-    c = list(X.columns)
-    if type(labels) == list:
-        c[0 : len(labels)] = labels
-    else:
-        c[0:1] = [labels]
-    X.columns = c
-    return X
-
-
+### toDataFrame class
+# makes no sense to save,load or persist toDataframe
 class toDataFrame(pasoFunction):
     """
     A paso to transform a  list, tuple, numpy 1-D or 2-D array, or Series
@@ -1210,9 +1705,6 @@ class toDataFrame(pasoFunction):
         return _new_feature_names(X, self.labels)
 
 
-# makes no sense to save,load or persist toDataframe
-
-
 def _time_required(func):
     timerr = timeit.default_timer
     x = timerr()
@@ -1261,7 +1753,7 @@ def dask_pandas_startup_ratio(magnitude=1):
     for power in tqdm(range(magnitude)):
         scale = 10 ** power
         bc = pd.concat([City for i in range(int(1.5 * scale))], axis=0)
-        logger.debug((type(bc), bc.shape, bc.shape[0] * bc.shape[1]))
+        logger.info((type(bc), bc.shape, bc.shape[0] * bc.shape[1]))
         N = mp.cpu_count()  # theads on this machine
         bcd = pdd.from_pandas(bc, npartitions=N)
 
@@ -1352,10 +1844,8 @@ def dask_pandas_ratio(magnitude=4):
     c = []
     m = []
     for power in tqdm(range(magnitude)):
-        #        logger.debug((power,10**power)
         scale = 10 ** power
         bc = pd.concat([City for i in range(int(1.5 * scale))], axis=0)
-        #        logger.debug((type(bc),bc.shape, bc.shape[0] * bc.shape[1])
         N = mp.cpu_count()  # theads on this machine
         bcd = pdd.from_pandas(bc, npartitions=N)
 
