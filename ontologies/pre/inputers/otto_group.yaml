@@ -1,0 +1,20 @@
+project: Common Ground Soltions/paso
+name: otto_group  #[optional]
+description:
+
+verbose: True  #[optional]
+target: target
+format: cvs
+
+cvs:
+  directory_path: '/Users/brucecottman/Documents/PROJECTS/paso/data/otto_group/'
+  train: 'train.csv'
+  test: 'test.csv'
+  sampleSubmission: 'SampleSubmission.csv'
+
+
+
+
+
+
+

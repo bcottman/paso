@@ -12,12 +12,13 @@ warnings.filterwarnings("ignore")
 
 # paso import
 from paso.base import _Check_No_NA_Values
-from paso.base import pasoFunction, pasoDecorators, PasoError
+from paso.base import pasoFunction, pasoDecorators, raise_PasoError
 from loguru import logger
 
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 #########0-0-0
+
 
 class Transform_Values_Ratios_to_Missing(pasoFunction):
     """
@@ -33,17 +34,17 @@ class Transform_Values_Ratios_to_Missing(pasoFunction):
             values is an evolving area of research.
 
     """
-    def __init__(self, verbose=True):
+
+    @pasoDecorators.InitWrap(narg=1)
+    def __init__(self):
         """
             Parameters:
                 verbose: (str) (default) True, logging on/off (``verbose=False``)
         """
         super().__init__()
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
 
-    @pasoDecorators.TransformWrap(_Check_No_NAs=False)
-    def transform(self, X, missing_values=[], inplace=True):
+    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    def transform(self, X, missing_values=[]):
         """
             Parameters:
                 Xarg: (DataFrame)
@@ -67,6 +68,7 @@ class Transform_Values_Ratios_to_Missing(pasoFunction):
 
         return X
 
+
 ########## 1-1-1
 class Missing_Values_Ratios(pasoFunction):
     """
@@ -86,17 +88,16 @@ class Missing_Values_Ratios(pasoFunction):
 
     """
 
-    def __init__(self, verbose=True):
+    @pasoDecorators.InitWrap(narg=1)
+    def __init__(self):
         """
             Parameters:
                 verbose: (str) (default) True, logging on/off (``verbose=False``)
         """
         super().__init__()
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
 
-    @pasoDecorators.TransformWrap(_Check_No_NAs=False)
-    def transform(self, X, missing_values=[], row_rmvr=False, inplace=True):
+    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    def transform(self, X, missing_values=[], row_rmvr=False):
         """
             Parameters:
                 Xarg: (DataFrame)
@@ -143,17 +144,16 @@ class Impute_Missing_Values(pasoFunction):
             values is an evolving area of research.
     """
 
-    def __init__(self, verbose=True):
+    @pasoDecorators.InitWrap(narg=1)
+    def __init__(self):
         """
             Parameters:
                 verbose: (str) (default) True, logging on/off (``verbose=False``)
         """
         super().__init__()
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
 
-    @pasoDecorators.TransformWrap(_Check_No_NAs=False)
-    def transform(self, strategy=None, inplace=True):
+    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    def transform(self, strategy=None):
         """
             Parameters:
                 Xarg: (DataFrame)
@@ -194,18 +194,16 @@ class Dupilicate_Features_by_Values(pasoFunction):
         database or data lake ages and different data sources are added.
     """
 
-    def __init__(self, verbose=True):
+    @pasoDecorators.InitWrap(narg=1)
+    def __init__(self):
         """
             Parameters:
                 verbose: (str) (default) True, logging on/off (``verbose=False``)
         """
         super().__init__()
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
-        self.ignore = []
 
-    @pasoDecorators.TransformWrap()
-    def transform(self, X, ignore=[], inplace=True):
+    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    def transform(self, X, ignore=[], **kwargs):
         """
             Parameters:
                 Xarg: (DataFrame)
@@ -255,18 +253,16 @@ class Features_with_Single_Unique_Value(pasoFunction):
     the dataframe as they have no predictive ability.
     """
 
-    def __init__(self, verbose=True):
+    @pasoDecorators.InitWrap(narg=1)
+    def __init__(self):
         """
             Parameters:
                 verbose: (str) (default) True, logging on/off (``verbose=False``)
         """
         super().__init__()
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
-        self.ignore = []
 
-    @pasoDecorators.TransformWrap()
-    def transform(self, X, ignore=[], inplace=True):
+    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    def transform(self, X, ignore=[]):
         """
             Parameters:
                 Xarg: (DataFrame)
@@ -283,8 +279,6 @@ class Features_with_Single_Unique_Value(pasoFunction):
             Raises:
 
             Note:
-
-
         """
         efs = []
         n = 0
@@ -322,16 +316,16 @@ class Features_Variances(pasoFunction):
     to reach a decision to remove a feature.
     """
 
-    def __init__(self, verbose=True):
+    @pasoDecorators.InitWrap(narg=1)
+    def __init__(self):
         """
             Parameters:
                 verbose: (str) (default) True, logging on/off (``verbose=False``)
         """
         super().__init__()
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
 
-    def transform(self, X):
+    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    def transform(self, X, **kwargs):
         """
             Parameters:
                 Xarg: (DataFrame)
@@ -397,17 +391,16 @@ class Feature_Feature_Correlation(pasoFunction):
 
     """
 
-    def __init__(self, verbose=True):
+    @pasoDecorators.InitWrap(narg=1)
+    def __init__(self):
         """
             Parameters:
                 verbose: (str) (default) True, logging on/off (``verbose=False``)
         """
         super().__init__()
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
 
-    @pasoDecorators.TransformWrap(_Check_No_NAs=False)
-    def transform(self, X, method="pearson", threshold=0.5, inplace=True):
+    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    def transform(self, X, method="pearson", threshold=0.5, **kwargs):
         """
             Parameters:
                 X: (DataFrame)
@@ -439,9 +432,9 @@ class Feature_Feature_Correlation(pasoFunction):
             corr.loc[((corr[f] < threshold) & (corr[f] > -threshold)), f] = 0
         return corr
 
-    def plot(self, mirror=False, xsize=10, xysize=10):
+    def plot(self, X, mirror=False, xsize=10, xysize=10):
         if self.transformed:
-            corr = self.f_x
+            corr = X
             fig, ax = plt.subplots(figsize=(xsize, xysize))
             colormap = sns.diverging_palette(220, 10, as_cmap=True)
             if mirror:
@@ -472,17 +465,16 @@ class Remove_Features(pasoFunction):
     the dataframe as they have no predictive ability.
     """
 
-    def __init__(self, verbose=True):
+    @pasoDecorators.InitWrap(narg=1)
+    def __init__(self):
         """
             Parameters:
                 verbose: (str) (default) True, logging on/off (``verbose=False``)
         """
         super().__init__()
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
 
-    @pasoDecorators.TransformWrap()
-    def transform(self, X, inplace=True, remove=[]):
+    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    def transform(self, X, remove=[], **wargs):
         """
             Parameters:
                 Xarg: (DataFrame)
@@ -501,7 +493,7 @@ class Remove_Features(pasoFunction):
 
 
         """
-        X.drop(remove, inplace=True, axis=1)
+        X.drop(remove, axis=1)
         return X
 
 
@@ -517,21 +509,17 @@ class Features_not_in_train_or_test(pasoFunction):
     database or datalake ages and different data sources are added.
     """
 
-    def __init__(self, verbose=True):
+    @pasoDecorators.InitWrap(narg=1)
+    def __init__(self):
         """
             Parameters:
 
                 verbose: (str) (default) True, logging on/off (``verbose=False``)
         """
-
         super().__init__()
-        self.f_y = None
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
-        self.ignore = []
 
-    @pasoDecorators.TransformWrap()
-    def transform(self, X, y=None, ignore=[], inplace=True):
+    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    def transform(self, X, y=None, ignore=[], **kwargs):
         """
             Parameters:
                 Xarg: (DataFrame)
@@ -687,48 +675,46 @@ class Class_Balance(pasoFunction):
             others will accept a  dataset only with continuous features.
 
     """
+
     from imblearn.over_sampling import RandomOverSampler
     from imblearn.over_sampling import SMOTE, ADASYN
-    from imblearn.over_sampling import BorderlineSMOTE,SMOTENC, SVMSMOTE
+    from imblearn.over_sampling import BorderlineSMOTE, SMOTENC, SVMSMOTE
 
     from imblearn.under_sampling import RandomUnderSampler
     from imblearn.under_sampling import ClusterCentroids
-    from imblearn.under_sampling import NearMiss, EditedNearestNeighbours, RepeatedEditedNearestNeighbours
+    from imblearn.under_sampling import (
+        NearMiss,
+        EditedNearestNeighbours,
+        RepeatedEditedNearestNeighbours,
+    )
     from imblearn.under_sampling import CondensedNearestNeighbour, OneSidedSelection
 
-    __Class_Balancers__= {
-        'RanZOverSample': RandomOverSampler
-        ,'SMOTE': SMOTE
-        ,'ADASYN:': ADASYN
-        ,'BorderLineSMOTE': BorderlineSMOTE
-        ,'SVMSMOTE': SVMSMOTE
-        ,'SMOTENC': SMOTENC
-        ,'RandomUnderSample': RandomUnderSampler
-        ,'ClusterCentroids': ClusterCentroids
-        ,'NearMiss': NearMiss
-        ,'EditedNearestNeighbour': EditedNearestNeighbours
-        , 'RepeatedEditedNearestNeighbours': RepeatedEditedNearestNeighbours
-        ,'CondensedNearestNeighbour': CondensedNearestNeighbour
-        , 'OneSidedSelection': OneSidedSelection
+    __Class_Balancers__ = {
+        "RanZOverSample": RandomOverSampler,
+        "SMOTE": SMOTE,
+        "ADASYN": ADASYN,
+        "BorderLineSMOTE": BorderlineSMOTE,
+        "SVMSMOTE": SVMSMOTE,
+        "SMOTENC": SMOTENC,
+        "RandomUnderSample": RandomUnderSampler,
+        "ClusterCentroids": ClusterCentroids,
+        "NearMiss": NearMiss,
+        "EditedNearestNeighbour": EditedNearestNeighbours,
+        "RepeatedEditedNearestNeighbours": RepeatedEditedNearestNeighbours,
+        "CondensedNearestNeighbour": CondensedNearestNeighbour,
+        "OneSidedSelection": OneSidedSelection,
     }
 
-    def __init__(self, Class_BalancerKey,verbose=True,*args, **kwargs):
+    @pasoDecorators.InitWrap(narg=1)
+    def __init__(self, ontological_filepath="", **kwargs):
         """
             Parameters:
-
-                verbose: (str) (default) True, logging on/off (``verbose=False``)
+                ontological_filepath:
+            Returns:
+                self
         """
 
         super().__init__()
-        if Class_BalancerKey in Class_Balance.__Class_Balancers__:
-            Class_BalanceC = Class_Balance.__Class_Balancers__[Class_BalancerKey](*args, **kwargs)
-        else:
-            logger.error("paso:Class_Balance: No Class_Balancer named: {} found.".format(Class_BalancerKey))
-            raise PasoError()
-        self.Class_BalancerKey = Class_BalancerKey
-        self.model = Class_BalanceC
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
 
     def classBalancers(self):
         """
@@ -740,43 +726,41 @@ class Class_Balance(pasoFunction):
         """
         return list(Class_Balance.__Class_Balancers__.keys())
 
-    def transform(self, X, targetFeature, inplace=True, *args, **kwargs):
+    @pasoDecorators.TransformWrapnarg(array=False, narg=3, nreturn=1)
+    def transform(self, X, targetFeature, **kwargs):
+        """
+            Parameters:
+                name:
+                verbose: (str)(default)
+                        True, logging
+                        on / off(``verbose = False``)
+            Returns:
+                self
+        """
+
+        if self.name in Class_Balance.__Class_Balancers__:
+            self.model = Class_Balance.__Class_Balancers__[self.name](**self.kwargs)
+            if self.verbose:
+                logger.info("Class_Balance:: {}".format(self.name))
+                logger.info(
+                    "Class_Balance: {} with kwargs {}".format(self.name, self.kwargs)
+                )
+
+        else:
+            raise_PasoError("No Class_Balancer named: {} found.".format(self.name))
 
         y = X[targetFeature]
         X = X[X.columns.difference([targetFeature])]
 
-        Xarg,yarg = self. _transform(X,y, *args, **kwargs)
-        if inplace:
-            X =  pd.DataFrame(Xarg,columns= X.columns)
+        Xarg, yarg = self.model.fit_resample(X, y)
+        if self.inplace:
+            X = pd.DataFrame(Xarg, columns=X.columns)
             X[targetFeature] = yarg
             return X
         else:
             Xarg[targetFeature] = yarg
             return Xarg
 
-    @pasoDecorators.TransformWrapXy(array=True)
-    def _transform(self, X, y, *args, **kwargs):
-        """
-            Parameters:
-                X: (DataFrame)
-                y: (DataSeries)
-
-
-            Returns:
-                X: X: (DataFrame)
-                    transformed (copy) X DataFrame
-                y: target (copy)
-
-            Raises:
-
-            Note:
-                All DataFrames are copies because rows are added
-
-        """
-        X,y = self.model.fit_resample(X, y)
-        self.f_x = [X,y]
-
-        return X,y
 
 class Augment_by_Class(pasoFunction):
     """
@@ -787,24 +771,21 @@ class Augment_by_Class(pasoFunction):
 
     """
 
-    def __init__(self, Class_BalancerKey,verbose=True,*args, **kwargs):
+    @pasoDecorators.InitWrap(narg=1)
+    def __init__(self, ontological_filepath="", **kwargs):
         """
             Parameters:
-
+                name:
                 verbose: (str) (default) True, logging on/off (``verbose=False``)
+                ontological_filepath:
+            Returns:
+                self
         """
 
         super().__init__()
-        if Class_BalancerKey in Class_Balance.__Class_Balancers__:
-            self.Class_BalancerKey = Class_BalancerKey
-        else:
-            logger.error("Augment_by_Class: No Class_Balancer named: {} found.".format(Class_BalancerKey))
-            raise PasoError()
 
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
-
-    def transform(self, X, targetFeature, ratio, inplace=True, *args, **kwargs):
+    @pasoDecorators.TransformWrapnarg(array=False, narg=4, nreturn=1)
+    def transform(self, X, targetFeature, ratio, **kwargs):
         """
             Argment data by ratio.
                 1. the dataset is class balanced first.
@@ -818,7 +799,7 @@ class Augment_by_Class(pasoFunction):
 
             Parameters:
                 X: (DataFrame)
-                y: (DataSeries)
+                targetFeature: (string)
                 ratio: (float) must be [0.0,1.0]. setting to 1.0 means dunle size if dataser
                     size = (1 + ratio)
 
@@ -831,37 +812,40 @@ class Augment_by_Class(pasoFunction):
                 Because of integer roundoff. the ratio increased may not be exact
 
         """
-        self.inplace = inplace
-        #1
-        X = Class_Balance(self.Class_BalancerKey).transform(X,targetFeature,inplace=self.inplace)
-        #2
+        if self.name in Class_Balance.__Class_Balancers__:
+            self.model = Class_Balance.__Class_Balancers__[self.name](**self.kwargs)
+            if self.verbose:
+                logger.info("Augment_by_Class:: {}".format(self.name))
+                logger.info(
+                    "Augment_by_Class: {} with kwargs {}".format(self.name, self.kwargs)
+                )
+        else:
+            raisePasoError(
+                "No Augment_by_Class/Class_Balancer named: {} found.".format(self.name)
+            )
+        # 1
+        #        X = self.model.transform(X, targetFeature, **kwargs)
+        # 2
         if ratio > 1.0 or ratio < 0.0:
-            log.error('Augment_by_Class: ratio must be [0.0,1.0], was: {}',format(ratio))
-            PasoError('Augment_by_Class: ratio must be [0.0,1.0], was: {}',format(ratio))
+            raise_PasoError(
+                "Augment_by_Class: {} ratio must be [0.0,1.0], was: {}", format(ratio)
+            )
         classes = X[targetFeature].unique()
         n_class = X[targetFeature].nunique()
-        #3
+        # 3
         stub_size = int(X.shape[0] * ratio / n_class)
         lowest_class = np.min(classes)
         stub = X[X[targetFeature] == lowest_class].sample(stub_size)
-        #4
+        # 4
         X = X.append(stub)
-        X = Class_Balance(self.Class_BalancerKey).transform(X,targetFeature,inplace=self.inplace)
-        #5the stub is subtracted
+        X = Class_Balance(ontological_filepath=self.ontological_filepath).transform(
+            X, targetFeature, verbose = self.verbose
+        )
+        # 5the stub is subtracted
         X.drop(X.index[stub.index], inplace=True)
-        #6 and the dataset is rebalanced.
-        X = Class_Balance(self.Class_BalancerKey).transform(X,targetFeature,inplace=self.inplace)
-
-        self.f_x = X
+        # 6 and the dataset is rebalanced.
+        X = Class_Balance(ontological_filepath=self.ontological_filepath).transform(
+            X, targetFeature, verbose = self.verbose
+        )
 
         return X
-
-# i think class balance will handle all wrap
-#    @pasoDecorators.TransformWrapXy(array=True)
-    def __transform(self, X, y, *args, **kwargs):
-
-        X,y = Class_Balance(self.Class_BalancerKey,verbose=self.verbose).transform(X, y)
-
-        self.f_x = [X,y]
-
-        return X,y

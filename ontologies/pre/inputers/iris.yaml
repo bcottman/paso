@@ -1,0 +1,18 @@
+project: Common Ground Soltions/paso
+name: iris  #[optional]
+description:
+
+verbose: True  #[optional]
+inplace: True
+target: TypeOf
+format: exec # cvs
+exec:
+  train: ''  # return only as train independent of dataset kw
+  pre: ['from sklearn.datasets import load_iris','iris = load_iris()']
+  create-df: 'pd.DataFrame(iris.data, columns = iris.feature_names )'
+  post: ['result[self.target] = iris.target']
+
+
+
+
+

@@ -1,0 +1,16 @@
+project: Common Ground Soltions/paso
+name: SMOTENC  #[optional]
+description:
+
+verbose: True  #[optional]
+inplace: True
+kwargs:
+    categorical_features: [4]
+
+
+
+
+
+
+
+
