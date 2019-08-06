@@ -3,15 +3,13 @@
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 
-from abc import ABC
-
 ""
 # todo:  enable checkpoint
 # todo: support RAPID in parm file
 # todo: port to swift
 # not neeed with checkpoints and a notebook for every pipelin
 
-
+from abc import ABC
 from loguru import logger
 import pydot_ng as pydot
 from IPython.display import Image, display
@@ -19,7 +17,6 @@ import sys, os.path
 import yaml
 from attrdict import AttrDict
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
 import seaborn as sns
 import pandas as pd
@@ -74,8 +71,8 @@ def _array_to_string(array):
     return [str(item) for item in array]
 
 
-def _isAttribute(object, attribute_string):
-    return hasattr(object, attribute_string)
+def _isAttribute(objecty, attribute_string):
+    return hasattr(objecty, attribute_string)
 
 
 def is_Series(X):
@@ -99,7 +96,7 @@ def is_DataFrame(X):
         True (boolean) if DataFrame type.
         False (boolean) otherwise
     """
-    return type(X) == pd.core.frame.DataFrame or type(X) == pd.core.series.Series
+    return isinstance(X,pd.core.frame.DataFrame) or isinstance(X,pd.core.series.Series)
 
 
 def _new_feature_names(X, labels):
@@ -150,24 +147,24 @@ def set_modelDict_value(v, at):
     """
     replaced by _dict_value
     """
-    if at not in object.modelDict.keys():
-        object.modelDict[at] = v
+    if at not in objecty.modelDict.keys():
+        objecty.modelDict[at] = v
 
 
-def _dict_value(dict, key, default):
+def _dict_value(dictnary, key, default):
     """
     used to variable to dict-value or default.
     if key in dict return key-value
     else return default.
 
     """
-    if key in dict:
-        return dict[key]
+    if key in dictnary:
+        return dictnary[key]
     else:
         return default
 
 
-def _dict_value2(dict, fdict, key, default):
+def _dict_value2(dictnary,fdictnary, key, default):
     """
     used to variable to dict or fdict (2nd dict) value or default.
     if key in dict or fdict return key-value
@@ -177,10 +174,10 @@ def _dict_value2(dict, fdict, key, default):
 
     """
     result = default
-    if key in dict:
-        result = dict[key]
-    if key in fdict:
-        result = fdict[key]  # precedence to ontoloical file
+    if key in dictnary:
+        result = dictnary[key]
+    if key in fdictnary:
+        result = fdictnary[key]  # precedence to ontoloical file
     return result
 
 
@@ -221,54 +218,54 @@ class NameToClass:
 
 def _boiler_plate(narg, args, kwargs):
     """ hidden preamble for transform, train wrap"""
-    object = args[0]
+    objecty = args[0]
     if len(args) != narg:
         raise_PasoError(
             "This Transform/Train Wrap:Must be {} arguments. was:{} ".format(narg, args)
         )
     kwa = "ontological_filepath"  # set in __init__
-    if not _isAttribute(object, kwa):
+    if not _isAttribute(objecty, kwa):
         # not supposed to be in transform kw
-        object.ontological_filepath = _dict_value(kwargs, kwa, "")
+        objecty.ontological_filepath = _dict_value(kwargs, kwa, "")
 
     if kwa in kwargs:
         raise_PasoError(
             "ontological_filepath not call in instance creation. Transform/Train  wrong place."
         )
     kwa = "verbose"
-    object.verbose = _dict_value(kwargs, kwa, True)
-    validate_bool_kwarg(object.verbose, kwa)
+    objecty.verbose = _dict_value(kwargs, kwa, True)
+    validate_bool_kwarg(objecty.verbose, kwa)
 
     kwa = "inplace"
-    object.inplace = _dict_value(kwargs, kwa, True)
-    validate_bool_kwarg(object.verbose, kwa)
+    objecty.inplace = _dict_value(kwargs, kwa, True)
+    validate_bool_kwarg(objecty.verbose, kwa)
 
-    object.ontology_kwargs = {}
-    if object.ontological_filepath != "":
-        object.ontology_kwargs = Param(
-            filepath=object.ontological_filepath
+    objecty.ontology_kwargs = {}
+    if objecty.ontological_filepath != "":
+        objecty.ontology_kwargs = Param(
+            filepath=objecty.ontological_filepath
         ).parameters_D
-        if object.verbose:
+        if objecty.verbose:
             logger.info(
-                "Loaded Ontological file:{} ", format(object.ontological_filepath)
+                "Loaded Ontological file:{} ", format(objecty.ontological_filepath)
             )
     # check keywords in passes argument stream
     # non-optional kw default as None
-    object.inplace = _dict_value2(kwargs, object.ontology_kwargs, "inplace", True)
-    return object
+    objecty.inplace = _dict_value2(kwargs, objecty.ontology_kwargs, "inplace", True)
+    return objecty
 
 
-def _narg_boiler_plate(object, narg, _Check_No_NAs, fun, array, nreturn, args, kwargs):
+def _narg_boiler_plate(objecty, narg, _Check_No_NAs, fun, array, nreturn, args, kwargs):
     """ hidden postamble for transform, train wrap"""
     if narg == 1:
-        result = fun(object, **kwargs)
+        result = fun(objecty, **kwargs)
     elif len(args) == 2 or len(args) == 4:
-        if object.inplace:
+        if objecty.inplace:
             X = args[1]
         else:
             X = args[1].copy()
         _Check_is_DataFrame(X)
-        object.Xcolumns = X.columns
+        objecty.Xcolumns = X.columns
         if _Check_No_NAs:
             _Check_No_NA_Values(X)
         if len(args) == 2:
@@ -277,17 +274,17 @@ def _narg_boiler_plate(object, narg, _Check_No_NAs, fun, array, nreturn, args, k
             args = args[2:]
         # pre
         if array:
-            result = fun(object, X.to_numpy(), *args, **kwargs)
+            result = fun(objecty, X.to_numpy(), *args, **kwargs)
         else:
-            result = fun(object, X, *args, **kwargs)
+            result = fun(objecty, X, *args, **kwargs)
     elif narg == 3:
-        if object.inplace:
+        if objecty.inplace:
             X = args[1]
             y = args[2]
         else:
             X = args[1].copy()
             y = args[2].copy()
-        object.Xcolumns = X.columns
+        objecty.Xcolumns = X.columns
         if _Check_No_NAs:
             _Check_is_DataFrame(X)
         if _Check_No_NAs:
@@ -298,14 +295,14 @@ def _narg_boiler_plate(object, narg, _Check_No_NAs, fun, array, nreturn, args, k
             _Check_No_NA_Values(y)
         if array:  # passed pd yurn into npp
             if nreturn == 2:
-                result[0], result[1] = fun(object, X.to_numpy(), y.to_numpy(), **kwargs)
+                result[0], result[1] = fun(objecty, X.to_numpy(), y.to_numpy(), **kwargs)
             else:
-                result = fun(object, X.to_numpy(), y.to_numpy(), **kwargs)
+                result = fun(objecty, X.to_numpy(), y.to_numpy(), **kwargs)
         else:
             if nreturn == 2:
-                result[0], result[1] = fun(object, X, y, **kwargs)
+                result[0], result[1] = fun(objecty, X, y, **kwargs)
             else:
-                result = fun(object, X, y, **kwargs)
+                result = fun(objecty, X, y, **kwargs)
     else:
         raise_PasoError("4 or greater *args not currenlty supported in TransformWrap")
     return result
@@ -338,21 +335,21 @@ class pasoDecorators:
                             len(args), narg, args
                         )
                     )
-                object = args[0]
+                objecty = args[0]
                 # any class can have keyord verbose = (booean)
 
                 default = ""
-                object.ontological_filepath = _dict_value(
+                objecty.ontological_filepath = _dict_value(
                     kwargs, "ontological_filepath", default
                 )
-                if object.ontological_filepath == default:
+                if objecty.ontological_filepath == default:
                     logger.warning(
                         "No ontological_filepath instance:, args: {},kwargs: {}".format(
                             args, kwargs
                         )
                     )
 
-                fun(object, **kwargs)
+                fun(objecty, **kwargs)
 
             return wrapper
 
@@ -401,44 +398,55 @@ class pasoDecorators:
 
         def decorator(fun):
             def wrapper(*args, **kwargs):
-                object = _boiler_plate(narg, args, kwargs)
+                objecty = _boiler_plate(narg, args, kwargs)
                 # if in  ontolgical file then keyword will have prededence
                 # cleaners kwargs
-                object.drop = _dict_value2(kwargs, object.ontology_kwargs, "drop", [])
-                object.ignore = _dict_value2(
-                    kwargs, object.ontology_kwargs, "ignore", []
+                objecty.drop = _dict_value2(kwargs, objecty.ontology_kwargs, "drop", [])
+                objecty.ignore = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "ignore", []
                 )
-                object.dataset = _dict_value2(
-                    kwargs, object.ontology_kwargs, "dataset", "train"
+                objecty.dataset = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "dataset", "train"
                 )
-                object.description = _dict_value2(
-                    kwargs, object.ontology_kwargs, "description", ""
+                objecty.description = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "description", ""
                 )
-                object.name = _dict_value2(kwargs, object.ontology_kwargs, "name", "")
-                object.format = _dict_value2(
-                    kwargs, object.ontology_kwargs, "format", None
+                objecty.ignore = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "ignore", ""
                 )
-                if object.format != None:
-                    object.formatDict = _dict_value2(
-                        kwargs, object.ontology_kwargs, object.format, None
+                objecty.name = _dict_value2(kwargs, objecty.ontology_kwargs, "name", "")
+                objecty.format = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "format", None
+                )
+                if objecty.format != None:
+                    objecty.formatDict = _dict_value2(
+                        kwargs, objecty.ontology_kwargs, objecty.format, None
                     )
-                object.kwargs = _dict_value2(
-                    kwargs, object.ontology_kwargs, "kwargs", {}
+                objecty.kwargs = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "kwargs", {}
                 )
-                object.replace = _dict_value2(
-                    kwargs, object.ontology_kwargs, "replace", []
+                objecty.missing_values = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "missing_values", []
                 )
-                object.remove = _dict_value2(
-                    kwargs, object.ontology_kwargs, "remove", []
+                objecty.row_rmvr = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "row_rmvr", False
                 )
-                object.target = _dict_value2(
-                    kwargs, object.ontology_kwargs, "target", None
+
+                objecty.replace = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "replace", []
+                )
+
+                objecty.remove = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "remove", []
+                )
+                objecty.target = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "target", None
                 )
                 result = _narg_boiler_plate(
-                    object, narg, _Check_No_NAs, fun, array, nreturn, args, kwargs
+                    objecty, narg, _Check_No_NAs, fun, array, nreturn, args, kwargs
                 )
                 # post
-                object.transformed = True
+                objecty.transformed = True
                 return result
 
             return wrapper
@@ -455,7 +463,7 @@ class pasoDecorators:
                     Pass a Pandas dataframe (False) or numpy array=True.  Mainly for compatibility
                     with scikit which requires arrays.
 
-            Parm/wrap Class Instance attibutes: these are attibutes of object.fun (sef.x) set in this wrapper, if present in Parameter file
+            Parm/wrap Class Instance attibutes: these are attibutes of objecty.fun (sef.x) set in this wrapper, if present in Parameter file
 
             Keyword-args:
                 inplace: (CURRENTLY IGNORED)
@@ -495,61 +503,61 @@ class pasoDecorators:
         def decorator(fun):
             def wrapper(*args, **kwargs):
 
-                object = _boiler_plate(narg, args, kwargs)
+                objecty = _boiler_plate(narg, args, kwargs)
                 # if in  ontological file then keyword will have precedence
                 # check keywords in passes argument stream
                 # non-optional kw default as None
-                object.name = _dict_value2(kwargs, object.ontology_kwargs, "name", "")
-                object.description = _dict_value(kwargs, "description", "")
-                object.learner = _dict_value2(
-                    kwargs, object.ontology_kwargs, "learner", None
+                objecty.name = _dict_value2(kwargs, objecty.ontology_kwargs, "name", "")
+                objecty.description = _dict_value(kwargs, "description", "")
+                objecty.learner = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "learner", None
                 )
-                object.learner_name_kwargs = _dict_value2(
-                    kwargs, object.ontology_kwargs, object.learner, None
+                objecty.learner_name_kwargs = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, objecty.learner, None
                 )
-                object.genus = _dict_value2(
-                    kwargs, object.learner_name_kwargs, "genus", ""
+                objecty.genus = _dict_value2(
+                    kwargs, objecty.learner_name_kwargs, "genus", ""
                 )
-                object.kwargs = _dict_value2(
-                    kwargs, object.learner_name_kwargs, "learner_kwargs", {}
+                objecty.kwargs = _dict_value2(
+                    kwargs, objecty.learner_name_kwargs, "kwargs", {}
                 )
-                object.model = NameToClass.__learners__[object.learner](**object.kwargs)
-                object.metric = _dict_value2(
-                    kwargs, object.learner_name_kwargs, "metric", True
+                objecty.model = NameToClass.__learners__[objecty.learner](**objecty.kwargs)
+                objecty.metric = _dict_value2(
+                    kwargs, objecty.learner_name_kwargs, "metric", True
                 )
-                object.target = _dict_value2(
-                    kwargs, object.learner_name_kwargs, "target", None
+                objecty.target = _dict_value2(
+                    kwargs, objecty.learner_name_kwargs, "target", None
                 )
-                object.type = _dict_value2(
-                    kwargs, object.learner_name_kwargs, "type", ""
-                )
-
-                object.plot_confusion_matrix = _dict_value2(
-                    kwargs, object.learner_name_kwargs, "plot_confusion_matrix", ""
+                objecty.type = _dict_value2(
+                    kwargs, objecty.learner_name_kwargs, "type", ""
                 )
 
-                object.cross_validation = _dict_value2(
-                    kwargs, object.learner_name_kwargs, "cross_validation", []
+                objecty.plot_confusion_matrix = _dict_value2(
+                    kwargs, objecty.learner_name_kwargs, "plot_confusion_matrix", ""
                 )
-                object.cv_kwargs_list = []
-                for cv_name in object.cross_validation:
-                    object.cv_kwargs_list.append(
-                        _dict_value2(kwargs, object.learner_name_kwargs, cv_name, {})
+
+                objecty.cross_validation = _dict_value2(
+                    kwargs, objecty.learner_name_kwargs, "cross_validation", []
+                )
+                objecty.cv_kwargs_list = []
+                for cv_name in objecty.cross_validation:
+                    objecty.cv_kwargs_list.append(
+                        _dict_value2(kwargs, objecty.learner_name_kwargs, cv_name, {})
                     )
 
-                object.plot_kwargs = _dict_value2(
-                    kwargs, object.learner_name_kwargs, "plot_kwargs", None
+                objecty.plot_kwargs = _dict_value2(
+                    kwargs, objecty.learner_name_kwargs, "plot_kwargs", None
                 )
-                object.x_size = _dict_value2(kwargs, object.plot_kwargs, "x_size", 6)
-                object.y_size = _dict_value2(kwargs, object.plot_kwargs, "y_size", 6)
-                object.precision = _dict_value2(
-                    kwargs, object.plot_kwargs, "precision", 2
+                objecty.x_size = _dict_value2(kwargs, objecty.plot_kwargs, "x_size", 6)
+                objecty.y_size = _dict_value2(kwargs, objecty.plot_kwargs, "y_size", 6)
+                objecty.precision = _dict_value2(
+                    kwargs, objecty.plot_kwargs, "precision", 2
                 )
                 result = _narg_boiler_plate(
-                    object, narg, _Check_No_NAs, fun, array, nreturn, args, kwargs
+                    objecty, narg, _Check_No_NAs, fun, array, nreturn, args, kwargs
                 )
                 # post
-                object.trained = True
+                objecty.trained = True
                 return result
 
             return wrapper
@@ -571,14 +579,17 @@ class pasoDecorators:
         def decorator(fun):
             # i suppose i could of done @wraos for self, but this works
             def wrapper(*args, **kwargs):
-                object = args[0]
+                objecty = args[0]
+                objecty.measure = _dict_value2(
+                    kwargs, objecty.learner_name_kwargs, "measure", ""
+                )
                 if len(args) != narg:
                     raise_PasoError(
                         "PredictWrap:Must be {} arguments. was:{} ".format(narg, args)
                     )
                 if len(args) == 2:
                     Xarg = args[1]
-                if object.trained == False:
+                if objecty.trained == False:
                     raise PasoError(
                         "Predict:Must call train before predict.", args, kwargs
                     )
@@ -595,11 +606,11 @@ class pasoDecorators:
                 _Check_No_NA_Values(Xarg)
 
                 if array:
-                    result = fun(object, Xarg.to_numpy(), **kwargs)
+                    result = fun(objecty, Xarg.to_numpy(), **kwargs)
                 else:
-                    result = fun(object, Xarg, **kwargs)
+                    result = fun(objecty, Xarg, **kwargs)
 
-                object.predicted = True
+                objecty.predicted = True
                 return result
 
             return wrapper
@@ -618,7 +629,7 @@ class pasoDecorators:
 
         def decorator(fun):
             def wrapper(*args, **kwargs):
-                object = args[0]
+                objecty = args[0]
 
                 if len(args) < narg:
                     logger.error(
@@ -635,26 +646,26 @@ class pasoDecorators:
                     Xarg = args[1]
                     yarg = args[2]
 
-                object.inplace = True  # default always True
+                objecty.inplace = True  # default always True
                 # if wrapInplace, ignore any inplace keywords
-                if not wrapInplace:  # if true leave  object.inplace = True
+                if not wrapInplace:  # if true leave  objecty.inplace = True
                     kwa = "inplace"
                     if kwa in kwargs:
-                        object.inplace = kwargs[kwa]
-                        validate_bool_kwarg(object.inplace, kwa)
+                        objecty.inplace = kwargs[kwa]
+                        validate_bool_kwarg(objecty.inplace, kwa)
 
                 kwa = "drop"
                 if kwa in kwargs:
-                    object.drop = kwargs[kwa]
-                    validate_bool_kwarg(object.drop, kwa)
+                    objecty.drop = kwargs[kwa]
+                    validate_bool_kwarg(objecty.drop, kwa)
 
                 kwa = "ignore"
                 if kwa in kwargs:
-                    object.ignore = kwargs[kwa]
+                    objecty.ignore = kwargs[kwa]
 
                 kwa = "remove"
                 if kwa in kwargs:
-                    object.remove = kwargs[kwa]
+                    objecty.remove = kwargs[kwa]
 
                 # must be dataFrame
                 if is_DataFrame(Xarg):
@@ -669,7 +680,7 @@ class pasoDecorators:
                         format(type(Xarg)),
                     )
                 # cached . dont'caclulate again
-                if object.inplace:
+                if objecty.inplace:
                     X = Xarg
                     y = yarg
                 else:
@@ -680,12 +691,12 @@ class pasoDecorators:
                 result = [None, None]
                 if array:  # passed pd yurn into npp
                     result[0], result[1] = fun(
-                        object, X.to_numpy(), y.to_numpy(), **kwargs
+                        objecty, X.to_numpy(), y.to_numpy(), **kwargs
                     )
                 else:
-                    result[0], result[1] = fun(object, X, y ** kwargs)
+                    result[0], result[1] = fun(objecty, X, y ** kwargs)
                 # post
-                object.transformed = True
+                objecty.transformed = True
                 return result[0], result[1]
 
             return wrapper
@@ -704,7 +715,7 @@ class pasoDecorators:
 
         def decorator(fun):
             def wrapper(*args, **kwargs):
-                object = args[0]
+                objecty = args[0]
                 if len(args) != narg:
                     raise_PasoError(
                         "TransformWrap:Must be {} arguments. was:{} ".format(narg, args)
@@ -712,11 +723,11 @@ class pasoDecorators:
                 if len(args) >= 2:
                     Xarg = args[1]
 
-                object.inplace = _dict_value(kwargs, "inplace", False)  # default  False
-                object.drop = _dict_value(kwargs, "drop", [])
-                object.ignore = _dict_value(kwargs, "ignore", [])
-                object.remove = _dict_value(kwargs, "remove", [])
-                object.filename = _dict_value(kwargs, "filename", "")
+                objecty.inplace = _dict_value(kwargs, "inplace", False)  # default  False
+                objecty.drop = _dict_value(kwargs, "drop", [])
+                objecty.ignore = _dict_value(kwargs, "ignore", [])
+                objecty.remove = _dict_value(kwargs, "remove", [])
+                objecty.filename = _dict_value(kwargs, "filename", "")
 
                 # must be dataFrame
                 if is_DataFrame(Xarg):
@@ -728,7 +739,7 @@ class pasoDecorators:
                     )
                 # passing X
                 if narg >= 2:
-                    if object.inplace:
+                    if objecty.inplace:
                         X = Xarg
                     else:
                         X = Xarg.copy()
@@ -736,12 +747,12 @@ class pasoDecorators:
                     _Check_No_NA_Values(X)
                     # pre
                     if array:
-                        result = fun(object, X.to_numpy(), **kwargs)
+                        result = fun(objecty, X.to_numpy(), **kwargs)
                     else:
-                        result = fun(object, X, **kwargs)
+                        result = fun(objecty, X, **kwargs)
 
                 # post
-                object.transformed = True
+                objecty.transformed = True
                 return result
 
             return wrapper
@@ -760,7 +771,7 @@ class pasoDecorators:
 
         def decorator(fun):
             def wrapper(*args, **kwargs):
-                object = args[0]
+                objecty = args[0]
                 if len(args) != narg:
                     raise_PasoError(
                         "TransformWrapNoX:Must be {} arguments. was:{} ".format(
@@ -768,14 +779,14 @@ class pasoDecorators:
                         )
                     )
 
-                object.inplace = _dict_value(kwargs, "inplace", True)  # default  True
-                object.filename = _dict_value(kwargs, "filename", "")
+                objecty.inplace = _dict_value(kwargs, "inplace", True)  # default  True
+                objecty.filename = _dict_value(kwargs, "filename", "")
 
                 # not passing X
                 if narg == 1:
-                    result = fun(object, **kwargs)
+                    result = fun(objecty, **kwargs)
                 # post
-                object.transformed = True
+                objecty.transformed = True
                 return result
 
             return wrapper
@@ -791,14 +802,14 @@ class pasoDecorators:
                     Pass a Pandas dataframe (False) or numpy array=True.  Mainly for compatibility
                     with scikit which requires arrays.
 
-            Parm/wrap Class Instance attibutes: these are attributes of object.fun (sef.x) set in this wrapper, if present in Parameter file
+            Parm/wrap Class Instance attibutes: these are attributes of objecty.fun (sef.x) set in this wrapper, if present in Parameter file
 
-                 object.inplace : (CURRENTLY IGNORED)
+                 objecty.inplace : (CURRENTLY IGNORED)
                         False (boolean), replace 1st argument with resulting dataframe
                         True:  (boolean) ALWAYS False
 
-                object.modelKey
-                object.modelDict keys
+                objecty.modelKey
+                objecty.modelDict keys
                     inplace IGNORED
                     verbose Default: True
                     Metric Default: True
@@ -814,7 +825,7 @@ class pasoDecorators:
         def decorator(fun):
             # i suppose i could of done @wraos for self, but this works
             def wrapper(*args, **kwargs):
-                object = args[0]
+                objecty = args[0]
                 if len(args) != narg:
                     raise_PasoError(
                         "TrainWrap:Must be {} arguments. was:{} ".format(narg, args)
@@ -832,11 +843,11 @@ class pasoDecorators:
                     )
                 _Check_No_NA_Values(Xarg)
 
-                object.Xcolumns = Xarg.columns
+                objecty.Xcolumns = Xarg.columns
 
-                object.learner = None
-                object.modelDict = None
-                object.inplace = False
+                objecty.learner = None
+                objecty.modelDict = None
+                objecty.inplace = False
                 # todo support model as model list
                 if "models" not in Param.parameters_D:
                     raise PasoError(
@@ -854,33 +865,33 @@ class pasoDecorators:
 
                 for modelKey in Param.parameters_D["models"]:
 
-                    object.learner = modelKey
+                    objecty.learner = modelKey
 
-                    if object.learnernot in Param.parameters_D:
+                    if objecty.learnernot in Param.parameters_D:
                         raise PasoError(
                             "TrainWrap: No model named: {} not found in Parm file: {}".format(
-                                object.modelKey, Param.parameters_D.keys()
+                                objecty.modelKey, Param.parameters_D.keys()
                             )
                         )
 
-                    if object.learnernot in NameToClass.__learners__:
+                    if objecty.learnernot in NameToClass.__learners__:
                         raise PasoError(
                             "TrainWrap: No model named: {} not in mode;: {}".format(
-                                object.modelKey, NameToClass.__learners_.keys()
+                                objecty.modelKey, NameToClass.__learners_.keys()
                             )
                         )
 
-                    object.model = NameToClass.__learners__[object.modelKey]
+                    objecty.model = NameToClass.__learners__[objecty.modelKey]
 
-                    if type(Param.parameters_D[object.modelKey]) != type({}):
+                    if type(Param.parameters_D[objecty.modelKey]) != type({}):
                         raise PasoError(
-                            "TrainWrap: No model named: {} not type dict: {}".format(
-                                object.modelKey,
-                                type(Param.parameters_D[object.modelKey]),
+                            "TrainWrap: No model named: {} not type dictnary: {}".format(
+                                objecty.modelKey,
+                                type(Param.parameters_D[objecty.modelKey]),
                             )
                         )
 
-                    object.modelDict = Param.parameters_D[object.modelKey]
+                    objecty.modelDict = Param.parameters_D[objecty.modelKey]
 
                     set_modelDict_value(True, "verbose")
                     set_modelDict_value(1, "cv")
@@ -890,22 +901,22 @@ class pasoDecorators:
                     set_modelDict_value(None, "dataset")
                     set_modelDict_value(None, "target")
 
-                    if "model_kwargs" in object.modelDict.keys():
+                    if "model_kwargs" in objecty.modelDict.keys():
                         __learners__list_index = 1
-                        object.model = NameToClass.__learners__[object.modelKey][
+                        objecty.model = NameToClass.__learners__[objecty.modelKey][
                             __learners__list_index
-                        ](**object.modelDict["model_kwargs"])
+                        ](**objecty.modelDict["model_kwargs"])
                     else:
-                        if object.modelDict["valid"]:
+                        if objecty.modelDict["valid"]:
                             logger.warning(
                                 "model_kwargs not specified for model: {}".format(
-                                    object.modelKey
+                                    objecty.modelKey
                                 )
                             )
 
-                    if object.modelDict["valid"]:
-                        if "train_test_split_kwargs" in object.modelDict.keys():
-                            object.train_test_split_kwargs = object.modelDict[
+                    if objecty.modelDict["valid"]:
+                        if "train_test_split_kwargs" in objecty.modelDict.keys():
+                            objecty.train_test_split_kwargs = objecty.modelDict[
                                 "train_test_split_kwargs"
                             ]
 
@@ -915,54 +926,54 @@ class pasoDecorators:
                                     Param.parameters_D.keys()
                                 )
                             )
-                        if object.modelDict["target"] != None:
-                            if object.modelDict["target"] in object.Xcolumns:
-                                object.y_train = Xarg[
-                                    object.modelDict["target"]
+                        if objecty.modelDict["target"] != None:
+                            if objecty.modelDict["target"] in objecty.Xcolumns:
+                                objecty.y_train = Xarg[
+                                    objecty.modelDict["target"]
                                 ].to_numpy()
-                                object.X_train = Xarg[
+                                objecty.X_train = Xarg[
                                     Xarg.columns.difference(
-                                        [object.modelDict["target"]]
+                                        [objecty.modelDict["target"]]
                                     )
                                 ].to_numpy()
                                 if (
-                                    "stratify" in object.train_test_split_kwargs
-                                    and object.train_test_split_kwargs["stratify"]
+                                    "stratify" in objecty.train_test_split_kwargs
+                                    and objecty.train_test_split_kwargs["stratify"]
                                     != "None"
                                 ):
-                                    object.train_test_split_kwargs[
+                                    objecty.train_test_split_kwargs[
                                         "stratify"
-                                    ] = object.y_train
+                                    ] = objecty.y_train
                             else:
                                 PasoError(
                                     "trainwrap: unknown target:{} in {}".format(
-                                        object.modelDict["target"], object.Xcolumns
+                                        objecty.modelDict["target"], objecty.Xcolumns
                                     )
                                 )
-                        elif object.modelDict["target"] == None:
+                        elif objecty.modelDict["target"] == None:
                             logger.warning(
                                 "target not specified. train_test_split is not called for model: {}".format(
-                                    object.modelKey
+                                    objecty.modelKey
                                 )
                             )
                         else:
                             logger.warning(
                                 "valid=False, train_test_split is NOT CALLED for model: {}".format(
-                                    object.modelKey
+                                    objecty.modelKey
                                 )
                             )
                     else:
                         logger.warning(
-                            "valid not specified in: {}".format(object.modelDict.keys())
+                            "valid not specified in: {}".format(objecty.modelDict.keys())
                         )
 
                     if array:
 
-                        result = fun(object, Xarg.to_numpy(), **kwargs)
+                        result = fun(objecty, Xarg.to_numpy(), **kwargs)
                     else:
-                        result = fun(object, Xarg, **kwargs)
+                        result = fun(objecty, Xarg, **kwargs)
                 # post
-                object.trained = True
+                objecty.trained = True
                 return result
 
             return wrapper
@@ -1015,7 +1026,7 @@ class Log(object):
             default: ../parameters/default.yaml
 
         Returns:
-            ``loguru`` object instance
+            ``loguru`` objecty instance
 
         Example:
             >>> from paso.base import Paso
@@ -1260,7 +1271,7 @@ class Paso(object):
             pipe (list of tuple): (node_name,shape,edge_label
 
             Returns:
-                graph (pydot.Dot): object representing upstream pipeline paso(es).
+                graph (pydot.Dot): objecty representing upstream pipeline paso(es).
         """
         graph = self._pasoLine_DAG(__PiPeLiNeS__)
         plt = Image(graph.create_png())
@@ -1277,7 +1288,7 @@ class Paso(object):
             filepath (str): filepath to which the png with pipeline visualization should be persisted
 
         Returns:
-            graph (pydot.Dot): object representing upstream pipeline paso(es).
+            graph (pydot.Dot): objecty representing upstream pipeline paso(es).
         """
         graph = self._pasoLine_DAG(__PiPeLiNeS__)
         graph.write(filepath, format="png")
@@ -1291,7 +1302,7 @@ class Paso(object):
             pipe (list of tuple): (node_name,shape,edge_label
 
         Returns:
-            graph (pydot.Dot): object representing upstream pipeline paso(es).
+            graph (pydot.Dot): objecty representing upstream pipeline paso(es).
 
         """
         graph = pydot.Dot()
@@ -1319,10 +1330,10 @@ class pasoBase(ABC):
     a building block for a data analytics pipeline or any pipeline of
     computation that can be specified as a directed acyclic graph(DAG).
 
-    **paso** has these key objectives:
+    **paso** has these key objectyives:
 
     Simplicity:
-        for now this means object-oriented with as few as attributes as possible
+        for now this means objecty-oriented with as few as attributes as possible
         and a standard set of a few method calls.  You have a choice, though the
         common parameter ``inplace``, to transform or not change input arguments.
         the latter promotes a functional model that lends itself to high parallelism.
@@ -1351,7 +1362,7 @@ class pasoBase(ABC):
 
             - ``load`` retrieves the model, usally the weights, ``w``,from permanent storage. Optionally ``filepath`` maybe given to access a specific named file.
 
-            - ``reset`` Reset **paso** object to default state.
+            - ``reset`` Reset **paso** objecty to default state.
 
     **Class pasoFuctionBase Methods**:
 
@@ -1395,7 +1406,7 @@ class pasoBase(ABC):
     | model_checkpoint|       None       |      T        |
     +-----------------+------------------+---------------+
     | model_fileexists | read Transform   | read Predict |
-    |                   checkpoint_model_filename         |
+    |                   checkpoint_model_filename        |
     +-----------------+------------------+---------------+
 
     """
@@ -1494,7 +1505,7 @@ class pasoFunction(pasoBase):
         else:
             return False
 
-    def transform(self, *args, **kwargs):
+    def transform(self, X, *args, **kwargs):
         """
         Performs transformation f(x) of data, x.
 
@@ -1618,12 +1629,11 @@ class pasoModel(pasoBase):
 
     def save(self, X):
         """
-        Writes X to local checkpoint_file_name to directory given in ˜˜pasoparameters/checkpoint.yaml.
+        Writes X to local checkpoint_file_name to directory given in `paso/parameters/checkpoint.yaml```.
         
         Model specific.
             - checkpoint_model
             - checkpoint_model_file_name
-
 
         Parameters:
             X: (dataframe)

@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
-from tqdm import tqdm
+#from tqdm import tqdm
 
 import warnings
 
@@ -13,13 +13,15 @@ warnings.filterwarnings("ignore")
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.metrics import precision_score, log_loss, recall_score
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import brier_score_loss, roc_auc_score
+from sklearn.metrics import roc_auc_score
+#from sklearn.metrics import brier_score_loss
 
 # paso imports
 from paso.base import pasoModel, NameToClass
 from paso.base import raise_PasoError
 from paso.base import _array_to_string, pasoDecorators
-from paso.base import _add_dicts, _dict_value2
+from paso.base import _add_dicts
+#from paso.base import _dict_value2
 from loguru import logger
 
 __author__ = "Bruce_H_Cottman"
@@ -65,13 +67,11 @@ class Learner(pasoModel):
         return list(NameToClass.__learners__.keys())
 
     @pasoDecorators.TrainWrapsklearn(array=False)
-    def train(self, X, target=None, **kwargs):
+    def train(self, X, **kwargs):
         # Todo:Rapids numpy
         """
         Parameters:
-            X:  pandas dataFrame 
-
-
+            X:  pandas dataFrame
         Returns:
             self
         """
@@ -136,7 +136,7 @@ class Learner(pasoModel):
         return self.clf
 
     @pasoDecorators.PredictWrap(array=False, narg=2)
-    def predict(self, X, measure=False, **kwargs):
+    def predict(self, X, **kwargs):
         """
         Parameters:
             X_test:  pandas dataFrame #Todo:Dask numpy
@@ -144,23 +144,22 @@ class Learner(pasoModel):
             inplace: (CURRENTLY IGNORED)
                     False (boolean), replace 1st argument with resulting dataframe
                     True:  (boolean) ALWAYS False
-            
         Returns:
             (DataFrame): predict of X
         """
-        if measure:
+        if self.measure:
             self.y_test = X[self.target].values
             self.X_test = X[X.columns.difference([self.target])]
 
         y_pred = self.clf.predict(self.X_test)
 
-        if measure:
+        if self.measure:
             self.wrong_predicted_class = X[X[self.target] != y_pred]  # df
 
         y_predp = self.clf.predict_proba(self.X_test)
 
         if self.type == "Classification":
-            if measure:
+            if self.measure:
                 self.metrics = _add_dicts(
                     self.__metric_class(y_pred, self.y_test),
                     self.__metric_class_probability(y_predp, self.y_test),
@@ -189,7 +188,7 @@ class Learner(pasoModel):
         elif self.type == "Regression":
             pass
 
-        if measure:
+        if self.measure:
             if self.verbose:
                 logger.info(
                     "measures of error evaluated for model: {}".format(self.learner)

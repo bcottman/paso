@@ -44,7 +44,7 @@ class Transform_Values_Ratios_to_Missing(pasoFunction):
         super().__init__()
 
     @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
-    def transform(self, X, missing_values=[]):
+    def transform(self, X, **kwargs):
         """
             Parameters:
                 Xarg: (DataFrame)
@@ -62,7 +62,7 @@ class Transform_Values_Ratios_to_Missing(pasoFunction):
 
         """
         rd = {}
-        for value in missing_values:
+        for value in self.missing_values:
             rd[value] = np.nan
         X.replace(rd, inplace=True)
 
@@ -97,7 +97,7 @@ class Missing_Values_Ratios(pasoFunction):
         super().__init__()
 
     @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
-    def transform(self, X, missing_values=[], row_rmvr=False):
+    def transform(self, X, **kwargs):
         """
             Parameters:
                 Xarg: (DataFrame)
@@ -117,7 +117,7 @@ class Missing_Values_Ratios(pasoFunction):
 
         self.features_mvr = (X.shape[0] - X.count(axis=0)) / X.shape[0]
         self.rows_mvr = (X.shape[1] - X.count(axis=1)) / X.shape[1]
-        if row_rmvr:
+        if self.row_rmvr:
             X["mvr"] = self.rows_mvr.values
 
         return X
@@ -171,13 +171,13 @@ class Impute_Missing_Values(pasoFunction):
 
         """
         rd = {}
-        for value in missing_values:
+        for value in self.missing_values:
             rd[value] = np.nan
         X.replace(rd, inplace=True)
 
         self.features_mvr = (X.shape[0] - X.count(axis=0)) / X.shape[0]
         self.rows_mvr = (X.shape[1] - X.count(axis=1)) / X.shape[1]
-        if row_rmvr:
+        if selfrow_rmvr:
             X["mvr"] = self.rows_mvr.values
 
         return X
@@ -203,7 +203,7 @@ class Dupilicate_Features_by_Values(pasoFunction):
         super().__init__()
 
     @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
-    def transform(self, X, ignore=[], **kwargs):
+    def transform(self, X,  **kwargs):
         """
             Parameters:
                 Xarg: (DataFrame)
@@ -262,7 +262,7 @@ class Features_with_Single_Unique_Value(pasoFunction):
         super().__init__()
 
     @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
-    def transform(self, X, ignore=[]):
+    def transform(self, X, **kwargs):
         """
             Parameters:
                 Xarg: (DataFrame)
@@ -519,7 +519,7 @@ class Features_not_in_train_or_test(pasoFunction):
         super().__init__()
 
     @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
-    def transform(self, X, y=None, ignore=[], **kwargs):
+    def transform(self, X, y=None,  **kwargs):
         """
             Parameters:
                 Xarg: (DataFrame)
