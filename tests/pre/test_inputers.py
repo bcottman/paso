@@ -218,4 +218,4 @@ def test_inputer_otto_group_test():
 def test_inputer_otto_groupsample_Submission():
     o = Inputer(ontological_filepath="../../ontologies/pre/inputers/otto_group.yaml")
     sampleSubmission = o.transform(dataset="sampleSubmission")
-    sampleSubmission.shape == [144368, 10]
+    assert sampleSubmission.shape == [144368, 10]

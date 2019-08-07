@@ -26,12 +26,12 @@ RandomForest:
   plot_kwargs:
     x_size: 6
     y_size: 6
-    precision: 4
+    precision: 3
 
   cross_validation: ['BaggingClassifier','CalibratedClassifierCV']
 
   BaggingClassifier:
-    n_estimators: 30  # n trial that will be bagged
+    n_estimators: 10  # n trial that will be bagged
     bootstrap_features: True  # with replacement -==bagging
     max_samples : 1.0 # 0.9 == k-fold = 10
     max_features: 1.0 # 1.0 == all features randomly subset of features k == 0

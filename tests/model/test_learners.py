@@ -36,7 +36,7 @@ def test_learn_train_ontological_file_not_exist(flower):
 # 4
 def test_learn_train_bad_init(flower):
     o = Learner(
-        ontological_filepath="../../ontologies/learners/RandomForestClassification.yaml"
+        ontological_filepath="../../ontologies/learners/RandomForestClassification.sm.yaml"
     )
     with pytest.raises(PasoError):
         o.train(flower) == o
@@ -45,7 +45,7 @@ def test_learn_train_bad_init(flower):
 # 5
 def test_learn_train_no_target(flower):
     o = Learner(
-        ontological_filepath="../../ontologies/learners/RandomForestClassification.yaml"
+        ontological_filepath="../../ontologies/learners/RandomForestClassification.sm.yaml"
     )
     with pytest.raises(PasoError):
         o.train(flower) == o

@@ -96,7 +96,9 @@ def is_DataFrame(X):
         True (boolean) if DataFrame type.
         False (boolean) otherwise
     """
-    return isinstance(X,pd.core.frame.DataFrame) or isinstance(X,pd.core.series.Series)
+    return isinstance(X, pd.core.frame.DataFrame) or isinstance(
+        X, pd.core.series.Series
+    )
 
 
 def _new_feature_names(X, labels):
@@ -164,7 +166,7 @@ def _dict_value(dictnary, key, default):
         return default
 
 
-def _dict_value2(dictnary,fdictnary, key, default):
+def _dict_value2(dictnary, fdictnary, key, default):
     """
     used to variable to dict or fdict (2nd dict) value or default.
     if key in dict or fdict return key-value
@@ -295,7 +297,9 @@ def _narg_boiler_plate(objecty, narg, _Check_No_NAs, fun, array, nreturn, args, 
             _Check_No_NA_Values(y)
         if array:  # passed pd yurn into npp
             if nreturn == 2:
-                result[0], result[1] = fun(objecty, X.to_numpy(), y.to_numpy(), **kwargs)
+                result[0], result[1] = fun(
+                    objecty, X.to_numpy(), y.to_numpy(), **kwargs
+                )
             else:
                 result = fun(objecty, X.to_numpy(), y.to_numpy(), **kwargs)
         else:
@@ -399,22 +403,21 @@ class pasoDecorators:
         def decorator(fun):
             def wrapper(*args, **kwargs):
                 objecty = _boiler_plate(narg, args, kwargs)
-                # if in  ontolgical file then keyword will have prededence
-                # cleaners kwargs
-                objecty.drop = _dict_value2(kwargs, objecty.ontology_kwargs, "drop", [])
-                objecty.ignore = _dict_value2(
-                    kwargs, objecty.ontology_kwargs, "ignore", []
-                )
+                """
+                 all keywords for class transform methods are listed here.
+                 first it checks for the kw passed as an argument to transform.
+                 next it checks for any kw set in ontological dict. if there,
+                 it is set to THE KW pair value, overriding kwarg even 
+                 if set there.
+                """
+
                 objecty.dataset = _dict_value2(
                     kwargs, objecty.ontology_kwargs, "dataset", "train"
                 )
                 objecty.description = _dict_value2(
                     kwargs, objecty.ontology_kwargs, "description", ""
                 )
-                objecty.ignore = _dict_value2(
-                    kwargs, objecty.ontology_kwargs, "ignore", ""
-                )
-                objecty.name = _dict_value2(kwargs, objecty.ontology_kwargs, "name", "")
+                objecty.drop = _dict_value2(kwargs, objecty.ontology_kwargs, "drop", [])
                 objecty.format = _dict_value2(
                     kwargs, objecty.ontology_kwargs, "format", None
                 )
@@ -422,30 +425,50 @@ class pasoDecorators:
                     objecty.formatDict = _dict_value2(
                         kwargs, objecty.ontology_kwargs, objecty.format, None
                     )
+                objecty.ignore = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "ignore", ""
+                )
+                objecty.method = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "method", "pearson"
+                )
+                objecty.name = _dict_value2(kwargs, objecty.ontology_kwargs, "name", "")
                 objecty.kwargs = _dict_value2(
                     kwargs, objecty.ontology_kwargs, "kwargs", {}
                 )
                 objecty.missing_values = _dict_value2(
                     kwargs, objecty.ontology_kwargs, "missing_values", []
                 )
-                objecty.row_rmvr = _dict_value2(
-                    kwargs, objecty.ontology_kwargs, "row_rmvr", False
-                )
-
                 objecty.replace = _dict_value2(
                     kwargs, objecty.ontology_kwargs, "replace", []
                 )
-
+                objecty.ratio = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "ratio", 0.0
+                )
                 objecty.remove = _dict_value2(
                     kwargs, objecty.ontology_kwargs, "remove", []
+                )
+                objecty.row_rmvr = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "row_rmvr", False
+                )
+                objecty.strategy = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "strategy", None
                 )
                 objecty.target = _dict_value2(
                     kwargs, objecty.ontology_kwargs, "target", None
                 )
+                objecty.targetFeature = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "targetFeature", None
+                )
+                objecty.threshold = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "y", None
+                )
+                objecty.y = _dict_value2(
+                    kwargs, objecty.ontology_kwargs, "threshold", 0.5
+                )
+                # post
                 result = _narg_boiler_plate(
                     objecty, narg, _Check_No_NAs, fun, array, nreturn, args, kwargs
                 )
-                # post
                 objecty.transformed = True
                 return result
 
@@ -521,7 +544,9 @@ class pasoDecorators:
                 objecty.kwargs = _dict_value2(
                     kwargs, objecty.learner_name_kwargs, "kwargs", {}
                 )
-                objecty.model = NameToClass.__learners__[objecty.learner](**objecty.kwargs)
+                objecty.model = NameToClass.__learners__[objecty.learner](
+                    **objecty.kwargs
+                )
                 objecty.metric = _dict_value2(
                     kwargs, objecty.learner_name_kwargs, "metric", True
                 )
@@ -723,7 +748,9 @@ class pasoDecorators:
                 if len(args) >= 2:
                     Xarg = args[1]
 
-                objecty.inplace = _dict_value(kwargs, "inplace", False)  # default  False
+                objecty.inplace = _dict_value(
+                    kwargs, "inplace", False
+                )  # default  False
                 objecty.drop = _dict_value(kwargs, "drop", [])
                 objecty.ignore = _dict_value(kwargs, "ignore", [])
                 objecty.remove = _dict_value(kwargs, "remove", [])
@@ -964,7 +991,9 @@ class pasoDecorators:
                             )
                     else:
                         logger.warning(
-                            "valid not specified in: {}".format(objecty.modelDict.keys())
+                            "valid not specified in: {}".format(
+                                objecty.modelDict.keys()
+                            )
                         )
 
                     if array:
@@ -1374,7 +1403,6 @@ class pasoBase(ABC):
 
         - ``transform`` calculates ``f(x)`` with input parameter ``x``  for class ``pasoFunctionBase`` .
 
-
     **Class Methods common to both pasoFunctionBase and pasoModelBase**:
 
         - ``write``  puts ``f(x)`` to permanent storage for ``pasoFunctionBase`` .
@@ -1408,12 +1436,11 @@ class pasoBase(ABC):
     | model_fileexists | read Transform   | read Predict |
     |                   checkpoint_model_filename        |
     +-----------------+------------------+---------------+
-
     """
 
     # todo fix read/write chechpoint in train/predict/transform
     # move all kw into train/predict/transform esp. inplace,verbose
-    def __init__(self):
+    def __init__(self, **kwargs):
         # function and model
         self.checkpoint = False  # for transform or train
         self.checkpoint_file_name = ""  # for transform or train
@@ -1425,7 +1452,7 @@ class pasoFunction(pasoBase):
     For transform functions ``f(x)`` only.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__()
         # function
         self.transformed = (
@@ -1505,17 +1532,14 @@ class pasoFunction(pasoBase):
         else:
             return False
 
-    def transform(self, X, *args, **kwargs):
+    def transform(self, X, **kwargs):
         """
         Performs transformation f(x) of data, x.
-
         Parameters:
             args:
                 positional arguments (can be anything)
-
             kwargs:
                 keyword arguments (can be anything)
-
         Returns:
             f(X:) (dataframe)
         """
@@ -1528,7 +1552,7 @@ class pasoModel(pasoBase):
     For model only.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__()
         # model specific
         self.trained = False  # train has been accomplied on this instance
@@ -1538,10 +1562,8 @@ class pasoModel(pasoBase):
     def reset(self):
         """
         Reset **paso** object to default state.
-
-        Parameters
+        Parameters:
             None
-
         Returns:
             self
         """
@@ -1565,18 +1587,14 @@ class pasoModel(pasoBase):
     def write(self, X):
         """
         Writes X to local checkpoint_file_name to directory given in ˜˜pasoparameters/checkpoint.yaml.
-
         Parameters:
             X: (dataframe)
-
         Returns:
             self
-
         Raises:
             PasoError(\"must have non-blank checkpoint_file_name.\")
 
             PasoError(\"Must transform before checkpoint operation.\"  )
-
         """
         if self.trained:
             if self.checkpoint_file_name != "":
@@ -1634,47 +1652,37 @@ class pasoModel(pasoBase):
         Model specific.
             - checkpoint_model
             - checkpoint_model_file_name
-
         Parameters:
             X: (dataframe)
-
         Returns:
             self
-
         Raises:
             PasoError(\"must have non-blank checkpoint_file_name.\")
 
             PasoError(\"Must transform before checkpoint operation.\"  )
-
         """
         raise NotImplementedError
 
-    def train(self, X, *args, **kwargs):
+    def train(self, X, **kwargs):
         """
         Calulation using ``x`` of trainable parameters. for ``f(x)``.
         All model determines parameters based on input data, ``x`` .
-
         Notes:
             The trained parameters can be cached beyond the train/predict cycle.
-
         Parameters:
             X: (dataframe)
-
             args:
                 positional arguments (can be anything)
-
             kwargs:
                 keyword arguments (can be anything)
-
         Returns:
             self (pasoModel instance)
-
         Raises:
              NotImplementedError
         """
         raise NotImplementedError
 
-    def predict(self, Y, *args, **kwargs):
+    def predict(self, X, **kwargs):
         """
         Performs prediction f(y) of data, y, using model trained parameters
         that define the transform function **f**.
@@ -1692,16 +1700,13 @@ class pasoModel(pasoBase):
 
         Parameters:
             X: (dataframe)
-
             args:
                 positional arguments (can be anything)
-
             kwargs:
                 keyword arguments (can be anything)
 
         Returns:
             f(y): (dataframe)
-
         Raises:
              NotImplementedError
         """
@@ -1728,7 +1733,7 @@ class toDataFrame(pasoFunction):
     def __init__(self, verbose=True):
         super().__init__()
 
-    def transform(self, Xarg, labels=[], inplace=True, **kwargs):
+    def transform(self, Xarg, labels=[], **kwargs):
         """
         Transform a list, tuple, numpy 1-D or 2-D array, or pandas Series  into a  DataFrame.
 
@@ -1762,15 +1767,12 @@ class toDataFrame(pasoFunction):
             If other than of type ``DataFrame`` then  `inplace=False``, and  `inplace`` is ignored
             and only remains for backwaeds compatability.
 
-
         Returns: (pandas DataFrame)
 
         Raises:
             1. ValueError will result of unknown argument type.
             2. ValueError will result if labels is not a string or list of strings.
        """
-
-        validate_bool_kwarg(inplace, "inplace")
 
         if is_DataFrame(Xarg):
             self.transformed = True
