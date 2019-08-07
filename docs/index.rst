@@ -2,7 +2,7 @@ Welcome to paso
 ==================================
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
    :numbered:
    :caption: Table of Contents
    :name: mastertoc
@@ -10,7 +10,8 @@ Welcome to paso
    nbdoc/intro
    nbdoc/Contributing
    nbdoc/FAQ
-   generated/modules.rst
+   source/modules.rst
+   source/CHANGELOG.rst
 
 
 

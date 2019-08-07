@@ -1,0 +1,13 @@
+project: Common Ground Soltions/paso
+name: splitter_stratify_shuffle_test_size_50  #[optional]
+description:
+#split into train-"test" dataset
+kwargs:
+  test_size: 0.30 # set to zero to turn off
+  shuffle: True
+  stratify: True
+
+
+
+
+

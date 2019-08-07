@@ -84,12 +84,12 @@ this and other examples we call our environment **paso**).
 Create your own docs
 ~~~~~~~~~~~~~~~~~~~~
 
-The ``neptune.ml/paso project has created the``\ docs\`\`directory and
+The ``paso project has created the``\ docs\`\`directory and
 the initial infrastructure. You will finish creating your local doc
 development environment.
 
 Clone the
-``neptune.ml/paso to the local directory you have selected using``\ git\`\`,
+``paso to the local directory you have selected using``\ git\`\`,
 
 Go topaso project directory
 
@@ -101,7 +101,7 @@ Create ``rst`` files from docstrings in ``py`` files.:
 
 ::
 
-    >>> (paso) sphinx-apidoc -o generated/ -d 4 -fMa ../paso
+    >>> (paso) sphinx-apidoc -o source/ -d 3 -fMa ../paso
 
 Generate documnentation:
 

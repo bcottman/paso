@@ -200,7 +200,7 @@ def df_small_NA(df_small):
 def df_small_no_NA(df_small):
     return (df_small.replace(to_replace=np.nan, value='11/11/1906'))
 @pytest.fixture()
-def df_City():
+def City():
     from sklearn.datasets import load_boston
     boston = load_boston()
     City = pd.DataFrame(boston.data, columns=boston.feature_names)

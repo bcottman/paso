@@ -1,0 +1,15 @@
+project: Common Ground Soltions/paso
+name: SMOTE  #[optional]
+description:
+
+verbose: True  #[optional]
+inplace: True
+kwargs: {}
+
+
+
+
+
+
+
+

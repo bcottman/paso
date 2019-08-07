@@ -16,7 +16,7 @@ from __future__ import print_function
 import sys
 import os
 #import sphinx_gallery
-sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../'))
 
 # -- Project information -----------------------------------------------------
  
@@ -25,9 +25,9 @@ copyright = '2018, Bruce Cottman'
 author = 'Bruce Cottman'
 
 # The short X.Y version
-version = '0.2'
+version = '0.4'
 # The full version, including alpha/beta/rc tags
-release = '0.2.6'
+release = '0.4.1'
 
 
 # -- General configuration ---------------------------------------------------

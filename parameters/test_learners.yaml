@@ -12,7 +12,7 @@ HW_platform:
   threads_n: 24
   gpu_n: 2
 
-models: [RandomForest]
+learner:  RandomForest
 RandomForest:
   inplace: False
   verbose: True
