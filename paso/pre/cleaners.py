@@ -12,7 +12,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # paso import
-from paso.base import _Check_No_NA_Values
+from paso.base import _Check_No_NA_Values, _array_to_string
+from paso.base import _dict_value, _check_non_optional_kw
 from paso.base import pasoFunction, pasoDecorators, raise_PasoError
 from loguru import logger
 
@@ -44,7 +45,6 @@ class Transform_Values_Ratios_to_Missing(pasoFunction):
         """
         super().__init__()
 
-    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
     def transform(self, X, **kwargs):
         """
             Parameters:
@@ -89,7 +89,7 @@ class Missing_Values_Ratios(pasoFunction):
         """
         super().__init__()
 
-    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    @pasoDecorators.TTWrap(array=False)
     def transform(self, X, **kwargs):
         """
             Parameters:
@@ -140,7 +140,7 @@ class Impute_Missing_Values(pasoFunction):
         """
         super().__init__()
 
-    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    @pasoDecorators.TTWrap(array=False)
     def transform(self, **kwargs):
         """
             Parameters:
@@ -186,7 +186,7 @@ class Dupilicate_Features_by_Values(pasoFunction):
         """
         super().__init__()
 
-    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    @pasoDecorators.TTWrap(array=False)
     def transform(self, X, **kwargs):
         """
             Parameters:
@@ -241,7 +241,7 @@ class Features_with_Single_Unique_Value(pasoFunction):
         """
         super().__init__()
 
-    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    @pasoDecorators.TTWrap(array=False)
     def transform(self, X, **kwargs):
         """
             Parameters:
@@ -301,7 +301,7 @@ class Features_Variances(pasoFunction):
         """
         super().__init__()
 
-    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    @pasoDecorators.TTWrap(array=False)
     def transform(self, X, **kwargs):
         """
             Parameters:
@@ -376,7 +376,7 @@ class Feature_Feature_Correlation(pasoFunction):
         """
         super().__init__()
 
-    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    @pasoDecorators.TTWrap(array=False)
     def transform(self, X, **kwargs):
         """
             Parameters:
@@ -448,7 +448,7 @@ class Remove_Features(pasoFunction):
         """
         super().__init__()
 
-    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    @pasoDecorators.TTWrap(array=False)
     def transform(self, X, **wargs):
         """
             Parameters:
@@ -489,7 +489,7 @@ class Features_not_in_train_or_test(pasoFunction):
         """
         super().__init__()
 
-    @pasoDecorators.TransformWrapnarg(_Check_No_NAs=False)
+    @pasoDecorators.TTWrap(array=False)
     def transform(self, X, **kwargs):
         """
             Parameters:
@@ -527,7 +527,7 @@ class Features_not_in_train_or_test(pasoFunction):
         if x_features_cleaned > 0:
             if self.verbose:
                 logger.info(
-                    "Clean_Featuresn_in_X: {}".format(str(x_features_cleaned_efs))
+                    "Clean_Features_in_X: {}".format(str(x_features_cleaned_efs))
                 )
 
         rem = set(yarg.columns).difference(set(X.columns))
@@ -587,11 +587,11 @@ class Features_not_in_train_or_test(pasoFunction):
                 self.f_x.to_parquet(filepath_y)
                 return self
             else:
-                logger.error("filepath_x and filepath_y must have non-blank filename.")
-                raise PasoError()
+                raise_PasoError(
+                    "filepath_x and filepath_y must have non-blank filename."
+                )
         else:
-            logger.error("Must predict or transform before write operation.")
-            raise PasoError()
+            raise_PasoError("Must predict or transform before write operation.")
 
     def read(self, filepath_x="", filepath_y=""):
         """
@@ -627,11 +627,10 @@ class Features_not_in_train_or_test(pasoFunction):
             self.f_y = pd.read_parquet(self.save_file_name[1])
             return self.f_x, self.f_y
         else:
-            logger.error("Must write f_x and f_y before read.")
-            raise PasoError()
+            raise_PasoError("Must write f_x and f_y before read.")
 
 
-class Class_Balance(pasoFunction):
+class Balancer(pasoFunction):
     """
     Currently, **paso** supports only the imbalanced-learn
     package. This package is very comprehensive with
@@ -642,7 +641,7 @@ class Class_Balance(pasoFunction):
 
         Warning:
             Only **SMOTEC** can balance datasets with categorical features. All
-            others will accept a  dataset only with continuous features.
+            others will accept a dataset only with continuous features.
 
     """
 
@@ -659,7 +658,7 @@ class Class_Balance(pasoFunction):
     )
     from imblearn.under_sampling import CondensedNearestNeighbour, OneSidedSelection
 
-    __Class_Balancers__ = {
+    __Balancers__ = {
         "RanZOverSample": RandomOverSampler,
         "SMOTE": SMOTE,
         "ADASYN": ADASYN,
@@ -694,10 +693,10 @@ class Class_Balance(pasoFunction):
         Returns:
             List of available class Balancers ames.
         """
-        return list(Class_Balance.__Class_Balancers__.keys())
+        return list(Balancer.__Balancers__.keys())
 
-    @pasoDecorators.TransformWrapnarg(array=False, narg=3, nreturn=1)
-    def transform(self, X, **kwargs):
+    @pasoDecorators.TTWrap(array=False)
+    def transform(self, X, *args, **kwargs):
         """
             Parameters:
                 name:
@@ -707,32 +706,49 @@ class Class_Balance(pasoFunction):
             Returns:
                 self
         """
-
-        if self.name in Class_Balance.__Class_Balancers__:
-            self.model = Class_Balance.__Class_Balancers__[self.name](**self.kwargs)
-            if self.verbose:
-                logger.info("Class_Balance:: {}".format(self.name))
-                logger.info(
-                    "Class_Balance: {} with kwargs {}".format(self.name, self.kwargs)
+        # currently support only one Balancer, very brittle parser
+        # c, can only be in kwarg in transform
+        kwa = "target"
+        self.target = _dict_value(kwargs, kwa, None)
+        _check_non_optional_kw(
+            self.target,
+            "target key not specified in Balancer:.target {}".format(kwargs),
+        )
+        if self.target not in self.Xcolumns:
+            raise_PasoError(
+                "splitter: {}: unknown target:{} in {}".format(
+                    self, self.target, self.Xcolumns
                 )
-
+            )
         else:
-            raise_PasoError("No Class_Balancer named: {} found.".format(self.name))
+            self.n_class = X[self.target].nunique()
+            self.class_names = _array_to_string(X[self.target].unique())
+            # note arrays
+            y = X[self.target].values
+            X = X[X.columns.difference([self.target])]
 
-        y = X[self.targetFeature]
-        X = X[X.columns.difference([self.targetFeature])]
-
-        Xarg, yarg = self.model.fit_resample(X, y)
-        if self.inplace:
-            X = pd.DataFrame(Xarg, columns=X.columns)
-            X[self.targetFeature] = yarg
-            return X
+        # create instance of this particular learner
+        # checks for non-optional keyword
+        if self.kind_name not in Balancer.__Balancers__:
+            raise_PasoError(
+                "transform; no Balancer named: {} not in Balancer.__Balancers__: {}".format(
+                    self.kind_name, Balancer.__Balancers__.keys().keys()
+                )
+            )
         else:
-            Xarg[self.targetFeature] = yarg
-            return Xarg
+            self.model = Balancer.__Balancers__[self.kind_name](**self.kind_name_kwargs)
 
 
-class Augment_by_Class(pasoFunction):
+        X, y = self.model.fit_resample(X, y)
+        # arrays -> df
+        X = pd.DataFrame(
+            X, columns=[item for item in self.Xcolumns if item != self.target]
+        )
+        X[self.target] = y
+        return X
+
+
+class Augmenter(pasoFunction):
     """
     Currently, **paso** supports claas stutured data.
 
@@ -751,8 +767,8 @@ class Augment_by_Class(pasoFunction):
         """
         super().__init__()
 
-    @pasoDecorators.TransformWrapnarg(array=False, narg=4, nreturn=1)
-    def transform(self, X, **kwargs):
+    @pasoDecorators.TTWrap(array=False)
+    def transform(self, X, *args, **kwargs):
         """
             Argument data by ratio.
                 1. the dataset is class balanced first.
@@ -766,7 +782,7 @@ class Augment_by_Class(pasoFunction):
 
             Parameters:
                 X: (DataFrame)
-                targetFeature: (string)
+                target: (string)
                 ratio: (float) must be [0.0,1.0]. setting to 1.0 means dunle size if dataser
                     size = (1 + ratio)
 
@@ -779,40 +795,56 @@ class Augment_by_Class(pasoFunction):
                 Because of integer roundoff. the ratio increased may not be exact
 
         """
-        if self.name in Class_Balance.__Class_Balancers__:
-            self.model = Class_Balance.__Class_Balancers__[self.name](**self.kwargs)
-            if self.verbose:
-                logger.info("Augment_by_Class:: {}".format(self.name))
-                logger.info(
-                    "Augment_by_Class: {} with kwargs {}".format(self.name, self.kwargs)
-                )
-        else:
-            raisePasoError(
-                "No Augment_by_Class/Class_Balancer named: {} found.".format(self.name)
-            )
-        # 1
-        #        X = self.model.transform(X, targetFeature, **kwargs)
-        # 2
-        if self.ratio > 1.0 or self.ratio < 0.0:
+        # currently support only one Balancer, very brittle parser
+        # c, can only be in kwarg in transform
+        kwa = "target"
+        self.target = _dict_value(kwargs, kwa, None)
+        _check_non_optional_kw(
+            self.target,
+            "target key not specified in Balancer:.target {}".format(kwargs),
+        )
+        if self.target not in self.Xcolumns:
             raise_PasoError(
-                "Augment_by_Class: {} ratio must be [0.0,1.0], was: {}", format(ratio)
+                "Augmenter: {}: unknown target:{} in {}".format(
+                    self, self.target, self.Xcolumns
+                )
             )
-        classes = X[self.targetFeature].unique()
-        n_class = X[self.targetFeature].nunique()
+        kwa = "ratio"
+        self.ratio = _dict_value(kwargs, kwa, None)
+        _check_non_optional_kw(
+            self.ratio,
+            "ratio keyword pair not specified in Balancer:.ratio {}".format(kwargs),
+        )
+
+        # create instance of this particular learner
+        # checks for non-optional keyword
+        if self.kind_name not in Balancer.__Balancers__:
+            raise_PasoError(
+                "transform; no Augmenter named: {} not in Balancer.__Balancers__: {}".format(
+                    self.kind_name, Balancer.__Balancers__.keys()
+                )
+            )
+        else:
+            self.model = Balancer.__Balancers__[self.kind_name](**self.kind_name_kwargs)
+
+
         # 3
+        n_class = X[self.target].nunique()
+        classes = X[self.target].astype("category").cat.codes.astype("int").unique()
+        self.class_names = _array_to_string(X[self.target].unique())
         stub_size = int(X.shape[0] * self.ratio / n_class)
         lowest_class = np.min(classes)
-        stub = X[X[targetFeature] == lowest_class].sample(stub_size)
+        stub = X[X[self.target] == lowest_class].sample(stub_size)
         # 4
         X = X.append(stub)
-        X = Class_Balance(ontological_filepath=self.ontological_filepath).transform(
-            X, targetFeature=self.targetFeature, verbose=self.verbose
+        X = Balancer(ontological_filepath=self.ontological_filepath).transform(
+            X, target=self.target, verbose=self.verbose
         )
         # 5the stub is subtracted
         X.drop(X.index[stub.index], inplace=True)
         # 6 and the dataset is rebalanced.
-        X = Class_Balance(ontological_filepath=self.ontological_filepath).transform(
-            X, targetFeature=self.targetFeature, verbose=self.verbose
+        X = Balancer(ontological_filepath=self.ontological_filepath).transform(
+            X, target=self.target, verbose=self.verbose
         )
 
         return X

@@ -9,8 +9,8 @@ import numpy as np
 from numba import jit
 
 # paso imports
-from paso.base import pasoFunction, Paso
-from paso.base import pasoDecorators
+from paso.base import pasoFunction, Paso, raise_PasoError
+from paso.base import pasoDecorators, _must_be_list_tuple_int
 from loguru import logger
 
 __author__ = "Bruce_H_Cottman"
@@ -222,20 +222,16 @@ class ContinuoustoCategory(pasoFunction):
             if (self.float and Xarg[feature].dtype == np.float) or (
                 self.integer and Xarg[feature].dtype == np.int
             ):
-                if type(self.nbins) == tuple or type(self.nbins) == list:
-                    nbins = self.nbins[nth]
-                else:
-                    nbins = self.nbins
+                nbins = _must_be_list_tuple_int(self.nbins)
                 tminy = Xarg[feature].min() if miny == [] else miny[nth]
                 tmaxy = Xarg[feature].max() if maxy == [] else maxy[nth]
-                #                print('*****  ',feature)
                 Z = self._transform(Xarg[feature], nbins, tminy, tmaxy)
 
                 # import pdb; pdb.set_trace() # debugging starts here
                 # drop feature, if a list and its short, then their is an error.
                 # no drop for integer=False or floaty=False
                 drop = self.drop  # want the hell , do per iteration, negliable cost
-                if type(self.drop) == tuple or type(self.drop) == list:
+                if isinstance(self.drop, (tuple, list)):
                     drop = self.drop[nth]
                 if drop:
                     Xarg.drop(feature, axis=1, inplace=True)

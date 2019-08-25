@@ -4,9 +4,9 @@ import pytest
 # paso imports
 
 from paso.base import Paso, PasoError
-from paso.pre.encoder import Encoder
+from paso.pre.encoders import Encoder
 
-session = Paso(parameters_filepath="../../parameters/default-lesson.1.yaml").startup()
+session = Paso(parameters_filepath="../../parameters/lesson.1.yaml").startup()
 
 # 0
 def test_Class_init_NoArg():
@@ -63,7 +63,6 @@ def test_OrdinaEncoder(X):
     odf = pd.DataFrame(o)
     assert (Encoder("OrdinalEncoder").train(hdf).predict(hdf) == odf).any().any()
 
-
 # 6
 def test_OrdinaEncoderFlagsCacheOff(X):
     h = [["Male", 1], ["Female", 3], ["Female", 2]]
@@ -80,7 +79,6 @@ def test_OrdinaEncoderFlagsCacheOn(X):
     g = Encoder("OrdinalEncoder").cacheOn()
     g.train(hdf).predict(hdf)
     assert (g.trained and g.predicted and g.cache) == True
-
 
 # 8
 def test_OrdinaEncoderFlagsCacheOffpredictedNot(X):

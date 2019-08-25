@@ -1,5 +1,23 @@
 # paso changelog
 
+## 0.4.1
+
+2019-08-25
+
+### Added
+- added tests/test_inputers
+- added tests/test_learners
+- added to tests/test_cleaner
+- standardize into uniform
+- refactored *.py for new ontology structures
+- fixed bugs in all classes
+- changed cross_validators__ into Learner post-operations
+- added Learner/classification metrics
+- added Plotter class
+- added Balancer class
+- added Augmenter class
+
+
 ## 0.4.0
 
 2019-07-27
@@ -14,15 +32,14 @@
 - added exec
 - added cvs
 - added splitter
-
 - added __cross_validators__
-    - added BaggingClassifierCV
-        - bagging with or wihout sample replacement
-    - added CalibratedClassifierCV
+- added BaggingClassifierCV
+- bagging with or wihout sample replacement
+- added CalibratedClassifierCV
     
 - added __learners__
-    - LinearRegression
-    - RandomForestClassifier
+- added LinearRegression
+- added RandomForestClassifier
 
 ## 0.3.2
 

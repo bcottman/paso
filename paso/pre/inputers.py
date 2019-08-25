@@ -9,6 +9,7 @@ warnings.filterwarnings("ignore")
 # paso imports
 from paso.base import pasoFunction, raise_PasoError, _array_to_string
 from paso.base import pasoDecorators, _check_non_optional_kw, _dict_value
+from paso.base import _exists_as_dict_value, _kind_name_keys
 
 from loguru import logger
 import sys, os.path
@@ -19,47 +20,49 @@ import sys, os.path
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 #
-def _inputer_exec(self, dictnary):
+def _inputer_exec(self, **kwargs):
 
-    # must always be datae = ' train' or no dataset =
-    if self.dataset != "train" and ("train" not in dictnary):
-        raise_PasoError("dataset not recognized: {} ".format(self.dataset))
+    # must always be data = ' train' or no dataset =
+    if self.dataset != "train" and ("train" not in kwargs):
+        raise_PasoError(
+            "dataset='{}'  not recognized: in  {} ".format(self.dataset, kwargs)
+        )
 
     key = ["pre", "post"]
-    if key[0] in dictnary and dictnary[key[0]] != None:
-        for stmt in dictnary[key[0]]:
+    if key[0] in kwargs and kwargs[key[0]] != None:
+        for stmt in kwargs[key[0]]:
             exec(stmt)
 
     dfkey = "create-df"
-    if dfkey in dictnary and dictnary[dfkey] != None:
-        result = eval(dictnary[dfkey])
+    if dfkey in kwargs and kwargs[dfkey] != None:
+        result = eval(kwargs[dfkey])
 
-    if key[1] in dictnary and dictnary[key[1]] != "None":
-        for stmt in dictnary[key[1]]:
+    if key[1] in kwargs and kwargs[key[1]] != "None":
+        for stmt in kwargs[key[1]]:
             exec(stmt)
 
     return result
 
 
-def _create_path(kw, dictnary, directory_path, default):
-
-    if kw in dictnary:
-        return directory_path + _dict_value(dictnary, kw, default)
-    else:
-        return default
+# def _create_path(kw, dictnary, directory_path, default):
+#
+#     if kw in dictnary:
+#         return directory_path + _dict_value(dictnary, kw, default)
+#     else:
+#         return default
 
 
 # todo refactor this mess
-def _inputer_cvs(self, dictnary):
+def _inputer_cvs(self, **kwargs):
     kw = "names"
-    self.names = _dict_value(dictnary, kw, [])
+    self.names = _dict_value(kwargs, kw, [])
 
     kw = "directory_path"
-    self.directory_path = _dict_value(dictnary, kw, "")
+    self.directory_path = _dict_value(kwargs, kw, "")
 
     kw = "train"
-    if kw in dictnary:
-        self.train_path =self.directory_path + dictnary[kw]
+    if kw in kwargs:
+        self.train_path = self.directory_path + kwargs[kw]
         if os.path.exists(self.train_path):
             if self.names != []:
                 train = pd.read_csv(self.train_path, names=self.names)
@@ -67,22 +70,22 @@ def _inputer_cvs(self, dictnary):
                 train = pd.read_csv(self.train_path)
         else:
             raise_PasoError(
-                "Inputer train path does not exist: {} or there might not be a directory_path:{}".format(
+                "Inputer train dataset path does not exist: {} or there might not be a directory_path:{}".format(
                     self.train_path, self.directory_path
                 )
             )
 
     kw = "url"
-    if kw in dictnary:
-        self.train_path = self.directory_path + dictnary[kw]
+    if kw in kwargs:
+        self.train_path = self.directory_path + kwargs[kw]
         if self.names != []:
             train = pd.read_csv(self.train_path, names=self.names)
         elif self.names == []:
             train = pd.read_csv(self.train_path)
 
     kw = "test"
-    if kw in dictnary:
-        self.test_path = self.directory_path + dictnary[kw]
+    if kw in kwargs:
+        self.test_path = self.directory_path + kwargs[kw]
         if os.path.exists(self.test_path):
             if self.names != []:
                 test = pd.read_csv(self.test_path, names=self.names)
@@ -90,12 +93,12 @@ def _inputer_cvs(self, dictnary):
                 test = pd.read_csv(self.test_path)
         else:
             raise_PasoError(
-                "Inputer test path does not exist: {}".format(self.test_path)
+                "Inputer test dataset path does not exist: {}".format(self.test_path)
             )
 
     kw = "sampleSubmission"
-    if kw in dictnary:
-        self.sampleSubmission_path = self.directory_path + dictnary[kw]
+    if kw in kwargs:
+        self.sampleSubmission_path = self.directory_path + kwargs[kw]
         if os.path.exists(self.sampleSubmission_path):
             if self.names != []:
                 sampleSubmission = pd.read_csv(
@@ -105,7 +108,7 @@ def _inputer_cvs(self, dictnary):
                 sampleSubmission = pd.read_csv(self.sampleSubmission_path)
         else:
             raise_PasoError(
-                "Inputer sampleSubmission path does not exist: {}".format(
+                "Inputer sampleSubmission dataset path does not exist: {}".format(
                     self.test_path
                 )
             )
@@ -123,23 +126,23 @@ def _inputer_cvs(self, dictnary):
         raise_PasoError("dataset not recognized: {} ".format(self.dataset))
 
 
-def _inputer_xls(self, dict):
+def _inputer_xls(self, **kwargs):
     return None
 
 
-def _inputer_xlsm(self, dict):
+def _inputer_xlsm(self, **kwargs):
     return None
 
 
-def _inputer_text(self, dict):
+def _inputer_text(self, **kwargs):
     return None
 
 
-def _inputer_image2d(self, dict):
+def _inputer_image2d(self, **kwargs):
     return None
 
 
-def _inputer_image3d(self, dictnary):
+def _inputer_image3d(self, **kwargs):
     return None
 
 
@@ -196,7 +199,6 @@ class Inputer(pasoFunction):
         """
         return list(Inputer.__inputer__.keys())
 
-    @pasoDecorators.TransformWrapnarg(narg=1)
     def datasets(self):
         """
         List type of files avaiable
@@ -206,26 +208,10 @@ class Inputer(pasoFunction):
         Returns: lists of datasets
 
         """
+        return Inputer._datasets_avaialable_
 
-        if _check_non_optional_kw(
-            self.format, msg="Inputer:transform bad format: {}".format(self.format)
-        ):
-            if self.format in Inputer.__inputer__:
-                file_name_list = Inputer._datasets_avaialable_
-                _check_non_optional_kw(
-                    self.formatDict,
-                    msg="Inputer:transform bad format not foumd: {}".format(
-                        self.format
-                    ),
-                )
-                result = [name for name in file_name_list if name in self.formatDict]
-                if result == []:
-                    result = ["train"]
-
-        return result
-
-    @pasoDecorators.TransformWrapnarg(narg=1)
-    def transform(self, **kwargs):
+    @pasoDecorators.TTWrap(array=False, narg=1)
+    def transform(self, *args, **kwargs):
         # Todo:Rapids numpy
         """
         Parameters:
@@ -239,22 +225,26 @@ class Inputer(pasoFunction):
             Note:
         """
 
-        # check keywords in passes argument stream
-        # non-optional kw are initiated with None
+        # currently support only one inputer, very brittle parser
+        kwa = "target"
+        self.target = _dict_value(self.kind_name_kwargs, kwa, None)
+        _check_non_optional_kw(
+            kwa, "Inputer: needs target keyword. probably not set in ontological file."
+        )
+        # currently just  can only be in inputer/transformkwarg
+        kwa = "dataset"
+        self.dataset = _dict_value(kwargs, kwa, "train")
 
-        if _check_non_optional_kw(
-            self.format, msg="Inputer:transform bad format: {}".format(self.format)
-        ):
-            if self.format in Inputer.__inputer__:
-                self.input_fun = Inputer.__inputer__[self.format]
-                _check_non_optional_kw(
-                    self.formatDict,
-                    msg="Inputer:transform bad format not foumd: {}".format(
-                        self.format
-                    ),
+        # create instance of this particular learner
+        # checks for non-optional keyword
+        if self.kind_name not in Inputer.__inputer__:
+            raise_PasoError(
+                "transform; no format named: {} not in Inputers;: {}".format(
+                    self.kind_name, Inputer.__inputer__.keys()
                 )
-
-        return self.input_fun(self, self.formatDict)
+            )
+        else:
+            return Inputer.__inputer__[self.kind_name](self, **self.kind_name_kwargs)
 
 
 ### Splitter
@@ -283,7 +273,7 @@ class Splitter(pasoFunction):
         super().__init__()
         self.inplace = False
 
-    @pasoDecorators.TransformWrapnarg(array=False, narg=2)
+    @pasoDecorators.TTWrap(array=False)
     def transform(self, X, **kwargs):
         # Todo:Rapids numpy
         """
@@ -297,48 +287,44 @@ class Splitter(pasoFunction):
             Note:
         """
 
-        # check keywords in passes argument stream
-        # non-optional kw are initiated with None
-
-        if self.target == None:
-            raise_PasoError(
-                "target not specified through keyword call or ontological file for splitter: {}".format(
-                    self
-                )
-            )
-
-        if self.kwargs == None:
-            raise_PasoError(
-                "train_test_split_kwargs not specified for splitter: {}".format(self)
-            )
-
+        # c, can only be in kwarg in transform
+        kwa = "target"
+        self.target = _dict_value(kwargs, kwa, None)
+        _check_non_optional_kw(
+            self.target,
+            "target key not specified in splitter:.target {}".format(kwargs),
+        )
         if self.target not in self.Xcolumns:
             raise_PasoError(
                 "splitter: {}: unknown target:{} in {}".format(
                     self, self.target, self.Xcolumns
                 )
             )
+        else:
+            self.n_class = X[self.target].nunique()
+            self.class_names = _array_to_string(X[self.target].unique())
+            # note arrays
+            y_train = X[self.target].values
+            X_train = X[X.columns.difference([self.target])]
+            # stratify =True them reset to y
+            if "stratify" in self.kind_name_kwargs:
+                self.kind_name_kwargs["stratify"] = y_train
 
-        if _check_non_optional_kw(
-            self.target,
-            msg="Splitter:transform target= non-optional: {}".format(self.target),
-        ):
-            if self.target in self.Xcolumns:
-                self.n_class = X[self.target].nunique()
-                self.class_names = _array_to_string(X[self.target].unique())
-                # note arrays
-                y_train = X[self.target].values
-                X_train = X[X.columns.difference([self.target])]
-                # stratify =True them reset to y
-                if "stratify" in self.kwargs and self.kwargs["stratify"]:
-                    self.kwargs["stratify"] = y_train
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_train, y_train, **self.kind_name_kwargs
+            )
 
-            X_train, X_test, y_train, y_test = train_test_split(X_train, y_train)
-
+            X_train = pd.DataFrame(
+                X_train, columns=[item for item in self.Xcolumns if item != self.target]
+            )
             X_train[self.target] = y_train
+
+            X_test = pd.DataFrame(
+                X_test, columns=[item for item in self.Xcolumns if item != self.target]
+            )
             X_test[self.target] = y_test
 
-        return X_train, X_test
+            return X_train, X_test
 
 
 ###

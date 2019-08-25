@@ -1,0 +1,24 @@
+## ontology_keys
+# small # of tags for this recursive syntax
+project: Common Ground Soltions/paso #[optional]
+verbose: True  #[optional]
+inplace: True #[optional]
+# end of header
+kind:
+  #kind-<name> should be a dict and stops parsing here in
+  #wrap as the following is claas specific
+  #only (#kind-<name>) of instance of genus(class) should be here
+  #kind-<name>
+  RandomForest:
+    #kind-<name>-keys
+    genus: learner                                #[optional]
+    type: Classification
+    description: "Generic RF for classification small testing"  #[optional]
+    kwargs:
+    #name-kwargs
+      n_estimators: 100
+      n_jobs: -1
+      oob_score: True
+#      max_features: 4
+#      criterion: gini   #entropy
+#      max_depth: 50

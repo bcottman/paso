@@ -152,8 +152,6 @@ class EncoderVariables(object):
         "JamesSteinEncoder",
         "CatBoostEncoder",
     ]
-
-
 class Encoder(pasoModel):
     """
     Parameters:

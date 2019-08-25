@@ -1,20 +1,19 @@
-project: Common Ground Soltions/paso
-name: wine  #[optional]
-description:
-
+project: Common Ground Soltions/paso  #[optional]
 verbose: True  #[optional]
-target: Class
-format: cvs
-cvs:
-  url: 'https://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data'
-  names:  ['Class', 'Alcohol', 'Malic-acid', 'Ash',
-         'Alcalinity-ash' ,'Magnesium', 'phenols',
-         'Flavanoids', 'Nonflavanoid-phenols', 'Proanthocyanins', 'Color-intensity', 'Hue', 'OD280-OD315-diluted-wines',
-         'Proline']
-
-
-
-
-
+inplace: True  #[optional]
+kind:
+  cvs:
+    description: 'wine dataset'
+    genus: Inputer
+    type: dataset
+    kwargs:
+      target: Class
+      url: 'https://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data'
+      names:  ['Class', 'Alcohol', 'Malic-acid', 'Ash',
+             'Alcalinity-ash' ,'Magnesium', 'phenols',
+             'Flavanoids', 'Nonflavanoid-phenols
+            ', 'Proanthocyanins', 'Color-intensity'
+            , 'Hue', 'OD280-OD315-diluted-wines',
+             'Proline']
 
 

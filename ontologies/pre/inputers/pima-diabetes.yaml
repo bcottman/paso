@@ -1,19 +1,13 @@
 project: Common Ground Soltions/paso
-name: pima-diabetes  #[optional]
-description:
-
 verbose: True  #[optional]
-target: Outcome
-format: cvs
-
-cvs:
-  directory_path: '/Users/brucecottman/Documents/PROJECTS/paso/data/pima-diabetes/'
-  train: 'diabetes.csv'
-
-
-
-
-
-
-
+inplace: True
+kind:
+  cvs:
+    description: 'pima_diabetes dataset'
+    genus: Inputer
+    type: dataset
+    kwargs:
+      target: Outcome
+      directory_path: '/Users/brucecottman/Documents/PROJECTS/paso/data/pima-diabetes/'
+      train: 'diabetes.csv'
 

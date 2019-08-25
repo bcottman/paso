@@ -1,13 +1,19 @@
-project: Common Ground Soltions/paso
-name: SMOTE  #[optional]
-description:
-
+# see https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.BorderlineSMOTE.html#imblearn.over_sampling.BorderlineSMOTE
+# reference
+project: Common Ground Soltions/paso #[optional]
 verbose: True  #[optional]
-inplace: True
-kwargs:
-    kind: borderline1
-    replace: True
-
+inplace: True #[optional]
+kind:
+  BorderlineSMOTE:
+    description: "BorderlineSMOTE overbalance all classes"
+    genus: Balancer
+    kwargs:
+        kind: borderline-1 #or -2
+        sampling_strategy: all
+        k_neighbors: 50  # of neighbors
+        m_neighbors: 25 # if minority in danger
+        njobs: -1
+        random_state: 777
 
 
 

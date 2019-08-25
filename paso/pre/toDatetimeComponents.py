@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 # paso imports
 from paso.base import pasoFunction, pasoDecorators
-from paso.base import  _Check_No_NA_F_Values
+from paso.base import _Check_No_NA_F_Values
 
 
 __author__ = "Bruce_H_Cottman"
