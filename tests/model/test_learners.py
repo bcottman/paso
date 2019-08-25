@@ -1,5 +1,6 @@
 from pathlib import Path
 import pytest
+from loguru import logger
 
 # paso imports
 
@@ -52,22 +53,24 @@ def test_learn_train_no_target(flower):
 
 
 # 6
-def test_learn_train_kw_target(flower):
+def test_learn_train_kw_target_iris(flower):
     o = Learner(
-        ontological_filepath="../../ontologies/learners/RandomForestClassification.sm.yaml"
+        ontological_filepath="../../ontologies/learners/RFC.sm.sm.yaml"
     )
     o.train(flower, target="TypeOf")
+    o.predict(flower, measure=True)
+    logger.debug(o.metrics)
     assert o.target == "TypeOf"
 
 
 # 7
-def test_learn_train_kw_target():
+def test_learn_train_kw_target_pima():
     inputer = Inputer(
         ontological_filepath="../../ontologies/pre/inputers/pima-diabetes.yaml"
     )
     diabetes = inputer.transform()
     leaner = Learner(
-        ontological_filepath="../../ontologies/learners/RandomForestClassification.pima.yaml"
+        ontological_filepath="../../ontologies/learners/RFC.sm.yaml"
     )
     leaner.train(
         diabetes, target=inputer.target, checkpoint="diabetesRandomForest1.ckp"
@@ -75,6 +78,22 @@ def test_learn_train_kw_target():
     assert leaner.target == inputer.target
 
 
-# 9
+# 8
 
-# 10
+def test_learn_predict_metrics():
+    inputer = Inputer(
+        ontological_filepath="../../ontologies/pre/inputers/pima-diabetes.yaml"
+    )
+    diabetes = inputer.transform()
+    leaner = Learner(
+        ontological_filepath="../../ontologies/learners/RFC.pima.yaml"
+    )
+    leaner.train(
+        diabetes, target=inputer.target, checkpoint="diabetesRandomForest1.ckp")
+    learner.predict(diabetes, measure=True)
+    learner.metrics
+
+    assert leaner.target == inputer.target
+
+
+# 9

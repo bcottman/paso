@@ -44,16 +44,16 @@ def test_inputer_transform_exec(flower):
     assert (inputer.transform() == flower).any().any()
 
 
-# 4b
+# 23
 def test_inputer_datasets():
     inputer = Inputer(ontological_filepath="../../ontologies/pre/inputers/iris.yaml")
-    assert inputer.datasets() == ["train"]
-
-
-# 4c
-def test_inputer_transform_exec_bad(flower):
-    inputer = Inputer(ontological_filepath="../../ontologies/pre/inputers/iris.yaml")
-    assert (inputer.transform(dataset="test") == flower).any().any()
+    assert inputer.datasets() == [
+        "train",
+        "valid",
+        "test",
+        "sampleSubmission",
+        "directory_path",
+    ]
 
 
 # 5
@@ -90,66 +90,27 @@ def test_inputer_transform_splitter_onto_wrong_place():
         train, valid = splitter.transform(
             Flower,
             target=inputer.target,
-            ontological_filepath="../../ontologies/pre/inputers/split-stratify-shuffle-30.yaml",
+            ontological_filepath="../../ontologies/pre/inputers/test_size_30.yaml",
         )
-
-
-# 6b
-def test_inputer_transform_splitter_onto():
-    inputer = Inputer(ontological_filepath="../../ontologies/pre/inputers/iris.yaml")
-    Flower = inputer.transform()
-    splitter = Splitter(
-        ontological_filepath="../../ontologies/pre/inputers/split-stratify-shuffle-30.yaml"
-    )
-    train, valid = splitter.transform(Flower, target=inputer.target)
-    assert train.shape[1] == 5
-
-
 # 7
 def test_inputer_transform_splitter_X_train():
     inputer = Inputer(ontological_filepath="../../ontologies/pre/inputers/iris.yaml")
     Flower = inputer.transform()
     splitter = Splitter(
-        ontological_filepath="../../ontologies/pre/inputers/split-stratify-shuffle-30.yaml"
+        ontological_filepath="../../ontologies/pre/inputers/test_size_30.yaml"
     )
     train, valid = splitter.transform(Flower, target=inputer.target)
     assert valid.shape[1] == 5
-
 
 # 8
 def test_inputer_transform_splitter_X_test():
     inputer = Inputer(ontological_filepath="../../ontologies/pre/inputers/iris.yaml")
     Flower = inputer.transform()
     splitter = Splitter(
-        ontological_filepath="../../ontologies/pre/inputers/split-stratify-shuffle-30.yaml"
+        ontological_filepath="../../ontologies/pre/inputers/test_size_30.yaml"
     )
     train, test = splitter.transform(Flower, target=inputer.target)
     assert test[train.columns.difference([inputer.target])].shape[1] == 4
-
-
-# 8b
-def test_inputer_transform_splitter_otto_group():
-    inputer = Inputer(
-        ontological_filepath="../../ontologies/pre/inputers/otto_group.yaml"
-    )
-    Flower = inputer.transform()
-    splitter = Splitter(
-        ontological_filepath="../../ontologies/pre/inputers/split-stratify-shuffle-30.yaml"
-    )
-    train, valid = splitter.transform(Flower, target=inputer.target)
-    assert valid.shape[1] == 95
-
-
-# 8c
-def test_inputer_transform_splitter_wine():
-    inputer = Inputer(ontological_filepath="../../ontologies/pre/inputers/wine.yaml")
-    Flower = inputer.transform()
-    splitter = Splitter(
-        ontological_filepath="../../ontologies/pre/inputers/split-stratify-shuffle-30.yaml"
-    )
-    train, valid = splitter.transform(Flower, target=inputer.target)
-    assert train.shape[1] == 14
-
 
 # 9
 def test_inputer_transform_ontological_arg_error(flower):
@@ -158,7 +119,6 @@ def test_inputer_transform_ontological_arg_error(flower):
         Flower = o.transform(
             flower, ontological_filepath="../../ontologies/inputers/iris.yaml"
         )
-
 
 # 10
 def test_inputer_transform_ontological_bad_ontological_filepath(flower):
@@ -187,8 +147,16 @@ def test_inputer_transform_ontological_otto_group():
     otto_group = o.transform()
     assert otto_group.shape == (61878, 95)
 
-
 # 14
+def test_inputer_transform_splitter_wine():
+    inputer = Inputer(ontological_filepath="../../ontologies/pre/inputers/wine.yaml")
+    Flower = inputer.transform()
+    splitter = Splitter(
+        ontological_filepath="../../ontologies/pre/inputers/test_size_30.yaml"
+    )
+    train, valid = splitter.transform(Flower, target=inputer.target)
+    assert train.shape[1] == 14
+
 
 # 15
 def test_inputer_train_ontological_arg_error():
@@ -196,17 +164,21 @@ def test_inputer_train_ontological_arg_error():
     with pytest.raises(AttributeError):
         flower = o.traih()
 
+
 # 16
 def test_inputer_train_ontological_bad_file(flower):
     o = Inputer(ontological_filepath="../../ontologies/pre/inputers/bad.yaml")
     with pytest.raises(PasoError):
         _ = o.transform()
 
+
 # 17
 def test_inputer_pima_diabetes_train():
     o = Inputer(ontological_filepath="../../ontologies/pre/inputers/pima-diabetes.yaml")
     test = o.transform(dataset="train")
     assert test.shape == (768, 9)
+
+
 # 18
 def test_inputer_otto_group_test():
     o = Inputer(ontological_filepath="../../ontologies/pre/inputers/otto_group.yaml")
@@ -218,4 +190,33 @@ def test_inputer_otto_group_test():
 def test_inputer_otto_groupsample_Submission():
     o = Inputer(ontological_filepath="../../ontologies/pre/inputers/otto_group.yaml")
     sampleSubmission = o.transform(dataset="sampleSubmission")
-    assert sampleSubmission.shape == [144368, 10]
+    assert sampleSubmission.shape == (144368, 10)
+
+
+# 20
+def test_inputer_transform_splitter_otto_group():
+    inputer = Inputer(
+        ontological_filepath="../../ontologies/pre/inputers/otto_group.yaml"
+    )
+    Flower = inputer.transform()
+    splitter = Splitter(
+        ontological_filepath="../../ontologies/pre/inputers/test_size_30.yaml"
+    )
+    train, valid = splitter.transform(Flower, target=inputer.target)
+    assert valid.shape[1] == 95
+
+# 21
+def test_inputer_transform_splitter_onto():
+    inputer = Inputer(ontological_filepath="../../ontologies/pre/inputers/iris.yaml")
+    Flower = inputer.transform()
+    splitter = Splitter(
+        ontological_filepath="../../ontologies/pre/inputers/test_size_30.yaml"
+    )
+    train, valid = splitter.transform(Flower, target=inputer.target)
+    assert train.shape[1] == 5
+
+# 22
+def test_inputer_transform_dataset_setting_bad(flower):
+    inputer = Inputer(ontological_filepath="../../ontologies/pre/inputers/iris.yaml")
+    with pytest.raises(PasoError):
+        assert (inputer.transform(dataset="test") == flower).any().any()

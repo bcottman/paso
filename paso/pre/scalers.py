@@ -27,7 +27,7 @@ from scipy.stats import kurtosis, boxcox
 from scipy.optimize import fmin
 
 # paso imports
-from paso.base import pasoModel, PasoError
+from paso.base import pasoModel, raise_PasoError
 from paso.base import toDataFrame, pasoDecorators
 from paso.base import Paso
 from loguru import logger
@@ -361,7 +361,9 @@ class Scaler(pasoModel):
         if encoderKey in __ScalerDict__:
             Encoder = __ScalerDict__[encoderKey](*args)
         else:
-            raise PasoError("paso:scale: No scaler named: {} found.".format(encoderKey))
+            raise raise_PasoError(
+                "paso:scale: No scaler named: {} found.".format(encoderKey)
+            )
         self.encoderKey = encoderKey
         self.model = Encoder
         validate_bool_kwarg(verbose, "verbose")
@@ -429,7 +431,7 @@ class Scaler(pasoModel):
                 logger.info("Scaler:inverse_transform:{}".format(self.encoderKey))
             return toDataFrame().transform(X, labels=Xarg.columns, inplace=False)
         else:
-            raise PasoError(
+            raise raise_PasoError(
                 "scale:inverse_transform: must call train and predict before inverse"
             )
 

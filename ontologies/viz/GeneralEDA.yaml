@@ -1,0 +1,48 @@
+# ontology_keys
+project: Common Ground Soltions/paso
+verbose: True  #[optional]
+inplace: True
+# end of header
+kind:
+  #kind-<name> should be a dict and stops parsing here in
+  #wrap as the following is claas specific
+  #only (#kind-<name>) of instance of genus(class) should be here
+  #kind-<name>
+  GeneralEDA
+    #kind-<name>-keys
+    type: EDA
+    genus: plotter
+    description:  Common routine called for an initial EDA
+    kind:
+      #kind-<name>
+      Half_masked_corr_heatmap:
+      #kind-<name>-keys
+        kwargs:
+          #kind-<name>-kwarg
+          x_size: 6
+          y_size: 6
+          font_scale: 1
+          cmap: 'coolwarm'
+      #kind-<name>
+      Corralation_to_target:
+        #kind-<name>-keys
+        kwargs:
+          #kind-<name>-kwarg
+          x_size: 6
+          y_size: 6
+          font_scale: 1
+          cmap: 'coolwarm'
+      #kind-<name>
+      Feature_to_targets_scatterplots:
+        #kind-<name>-keys
+        kwargs:
+          #kind-<name>-kwarg
+          x_size: 6
+          y_size: 6
+          font_scale: 1
+          cmap: 'coolwarm'
+
+
+
+
+

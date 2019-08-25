@@ -1,16 +1,17 @@
-project: Common Ground Soltions/paso
-name: SMOTENC  #[optional]
-description:
-
+# see https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.SMOTENC.html
+# reference
+project: Common Ground Soltions/paso #[optional]
 verbose: True  #[optional]
-inplace: True
-kwargs:
-    categorical_features: [4]
-
-
-
-
-
+inplace: True #[optional]
+genus: Balancer
+kind:
+  SMOTENC:
+    description: "balancer for class structured dataset with categorical features"
+    args: [categorical_features]
+    kwargs:
+        sampling_strategy: auto
+        k_neighbors: 10  # of neighbors
+        random_state: 777
 
 
 

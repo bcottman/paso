@@ -1,20 +1,14 @@
 project: Common Ground Soltions/paso
-name: otto_group  #[optional]
-description:
-
 verbose: True  #[optional]
-target: target
-format: cvs
-
-cvs:
-  directory_path: '/Users/brucecottman/Documents/PROJECTS/paso/data/otto_group/'
-  train: 'train.csv'
-  test: 'test.csv'
-  sampleSubmission: 'SampleSubmission.csv'
-
-
-
-
-
-
-
+inplace: True
+kind:
+  cvs:
+    description: 'otto_group dataset'
+    genus: Inputer
+    type: dataset
+    kwargs:
+      target: target
+      directory_path: '/Users/brucecottman/Documents/PROJECTS/paso/data/otto_group/'
+      train: 'train.csv'
+      test: 'test.csv'
+      sampleSubmission: 'SampleSubmission.csv'
