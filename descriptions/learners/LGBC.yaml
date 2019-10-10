@@ -1,0 +1,43 @@
+## ontology_keys
+# small # of tags for this recursive syntax
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True #[optional]
+# end of header
+kind:
+  #kind-<name> should be a dict and stops parsing here in
+  #wrap as the following is claas specific
+  #only (#kind-<name>) of instance of genus(class) should be here
+  #kind-<name>
+  LGBMClassifier:
+    #kind-<name>-keys
+    genus: learner                                #[optional]
+    type: Classification
+    description: Generic XGBoost for classification  #[optional]
+    kwargs:
+    #name-kwargs
+      objective: binary
+      boosting_type: gbdt
+      learning_rate: 0.05
+      num_iterations: 10
+      subsample: 0.9
+      num_leaves: 100
+      max_bin: 256
+      feature_fraction: 1.0
+      drop_rate: 0.1
+      is_unbalance: True
+      max_drop: 50
+      min_child_samples: 10
+      min_child_weight: 400
+      min_split_gain: 0
+      n_jobs: -1
+      verbosity: 1
+      random_state: 77
+
+
+
+
+
+
+
+

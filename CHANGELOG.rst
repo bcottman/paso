@@ -1,17 +1,52 @@
 # paso changelog
 
+## 0.5.0
+
+2019-08-28
+
+### Added
+
+- changed ontology to description
+- refactored inputers.py
+- added to test_inputers.py
+- refactored cleaners.py
+- added transform_booleans in cleaners.py
+- added to test_cleaners.py
+- refactored learners.py
+- added cross-validation to learners.py
+- added predict, predicta, evaluate learners.py
+- addeded hyperopt for hyperparamer tuning to learners.py
+- added to test_learners.py
+- refactored encoders..py
+- added to test_encoders.py
+
+- finished lesson-3.ipynb
+
+## 0.4.2
+
+2019-08-28
+
+### Added
+
+- updated lesson-3.ipynb
+- added lesson-4.ipynb
+- added lesson-5.ipynb
+- fixed doc bugs
+- fixed .py bugs
+
 ## 0.4.1
 
 2019-08-25
 
 ### Added
+
 - added tests/test_inputers
 - added tests/test_learners
 - added to tests/test_cleaner
 - standardize into uniform
-- refactored *.py for new ontology structures
+- refactored .py for new ontology structures
 - fixed bugs in all classes
-- changed cross_validators__ into Learner post-operations
+- changed cross_validators into Learner post-operations
 - added Learner/classification metrics
 - added Plotter class
 - added Balancer class
@@ -23,6 +58,7 @@
 2019-07-27
 
 ### Added
+
 - added ontologies
 - added tests/test_inputers
 - added tests/test_learners
@@ -36,7 +72,6 @@
 - added BaggingClassifierCV
 - bagging with or wihout sample replacement
 - added CalibratedClassifierCV
-    
 - added __learners__
 - added LinearRegression
 - added RandomForestClassifier
@@ -46,6 +81,7 @@
 2019-07-14
 
 ### Added
+
 - lesson-1.ipynb
 - logging-parameter.ipynb
 - lesson-2.ipynb
@@ -64,6 +100,7 @@
 2019-06-07
 
 ### Added
+
 - added Encoder
 
 ## 0.3.0
@@ -71,6 +108,7 @@
 2019-06-05
 
 ### Added
+
 - added Scaler
 
 ## 0.2.1.alpha
@@ -78,6 +116,7 @@
 2019-04-28
 
 ### Added
+
 - reran all tests
 - created package at pypi
 

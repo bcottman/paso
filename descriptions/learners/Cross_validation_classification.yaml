@@ -1,0 +1,22 @@
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True #[optional]
+kind:
+  cross_validate:
+    genus: learner                            #[optional]
+    type: Classification
+    description: cross-validition  #[optional]
+    kwargs:
+      cv: 5
+      return_train_score: False
+      n_jobs : -1
+      verbose: 1
+
+
+
+
+
+
+
+
+

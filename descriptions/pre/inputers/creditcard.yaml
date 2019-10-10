@@ -1,0 +1,12 @@
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True  #[optional]
+kind:
+  cvs:
+    description: 'credit card fraud dataset'
+    genus: Inputer
+    type: yaml
+    kwargs:
+      target: Class
+      directory_path: '/Users/brucecottman/Documents/PROJECTS/paso/data/'
+      train: 'creditcardfraud.zip'

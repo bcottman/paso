@@ -152,7 +152,7 @@ class EncoderVariables(object):
         "JamesSteinEncoder",
         "CatBoostEncoder",
     ]
-class Encoder(pasoModel):
+class Encoders(pasoModel):
     """
     Parameters:
         encoderKey: (str) One of Encoder.encoders()
@@ -196,7 +196,6 @@ class Encoder(pasoModel):
             inplace: (CURRENTLY IGNORED)
                     False (boolean), replace 1st argument with resulting dataframe
                     True:  (boolean) ALWAYS False
-            
         Returns:
             self
         """

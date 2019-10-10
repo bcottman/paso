@@ -23,5 +23,6 @@ setuptools==39.2.0
 tensorboard==1.12.2
 tensorfkow==1.13.0rc2
 typing==3.6.4
+urllib3==1.21.1
 xgboost==0.81
 yaml==0.1.7

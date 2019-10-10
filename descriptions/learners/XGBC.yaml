@@ -1,0 +1,37 @@
+## ontology_keys
+# small # of tags for this recursive syntax
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True #[optional]
+# end of header
+kind:
+  #kind-<name> should be a dict and stops parsing here in
+  #wrap as the following is claas specific
+  #only (#kind-<name>) of instance of genus(class) should be here
+  #kind-<name>
+  XGBClassifier:
+    #kind-<name>-keys
+    genus: learner                                #[optional]
+    type: Classification
+    description: Generic XGBoost for classification  #[optional]
+    kwargs:
+    #name-kwargs
+      booster: gbtree
+      objective: binary:logistic
+      learning_rate: 0.05
+      subsample: 0.9
+      max_depth: 7
+      n_estimators: 100
+      colsample_bytree: 0.5
+      min_child_weight: 150
+      nthread: -1
+      verbosity: 1
+      random_state: 77
+
+
+
+
+
+
+
+

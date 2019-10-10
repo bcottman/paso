@@ -7,16 +7,12 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # paso imports
-# paso imports
 from paso.base import pasoFunction, NameToClass
 from paso.base import raise_PasoError
 from paso.base import _array_to_string, pasoDecorators
-from paso.base import _add_dicts
-#from paso.base import _dict_value2
-#from loguru import logger
 
 from loguru import logger
-import sys, os.path
+
 
 ### NameToClass class
 class EDAToClass:
@@ -42,7 +38,7 @@ class EDA(pasoFunction):
 
     """
 
-    @pasoDecorators.InitWrap(narg=1)
+    @pasoDecorators.InitWrap()
     def __init__(self, **kwargs):
 
         """
@@ -61,9 +57,9 @@ class EDA(pasoFunction):
         Returns:
             List of available models names.
         """
-        return listNameToClass.__EDAers__.keys())
+        return listNameToClass.__EDAers__.keys()
 
-    @pasoDecorators.TransformWrapnarg(array=False, narg=2)
+    @pasoDecorators.TransformWrapnarg(array=False)
     def transform(self, X, **kwargs):
         # Todo:Rapids numpy
         """
@@ -155,6 +151,7 @@ class Half_masked_corr_heatmap(object):
         plt.show();
 
         return result
+
 ### Corralation_to_target
 class Corralation_to_target(object):
     """
@@ -198,6 +195,7 @@ class Corralation_to_target(object):
     plt.show();
 
     return result
+
 ### Feature_to_targets_catterplots
 class Feature_to_targets_scatterplots(object):
     """
@@ -246,8 +244,6 @@ class Feature_to_targets_scatterplots(object):
                               color=color_choices[i % len(color_choices)],
                               alpha=0.1)
 
-                #           Individual subplot titles, optional
-                #             ax[i].set_title(f'{column} vs. {target_column}', fontsize=18)
 
                 ax[i].set_ylabel(f'{target_column}', fontsize=14)
                 ax[i].set_xlabel(f'{column}', fontsize=14)

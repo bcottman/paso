@@ -1,0 +1,22 @@
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True
+kind:
+  exec:
+    description: 'Iris dataset'
+    genus: Inputer
+    type: sklearn.datasets
+    kwargs:
+      target: TypeOf
+      pre: ['from sklearn.datasets import load_iris','iris = load_iris()']
+      create-df: 'pd.DataFrame(iris.data, columns = iris.feature_names )'
+      post: ['result[self.target] = iris.target']
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,11 @@
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import pandas as pd
-from tqdm import tqdm
-from pandas.util._validators import validate_bool_kwarg
+import urllib.request
+
+# from tqdm import tqdm
+# from pandas.util._validators import validate_bool_kwarg
 from sklearn.model_selection import train_test_split
 import warnings
 
@@ -9,17 +14,39 @@ warnings.filterwarnings("ignore")
 # paso imports
 from paso.base import pasoFunction, raise_PasoError, _array_to_string
 from paso.base import pasoDecorators, _check_non_optional_kw, _dict_value
-from paso.base import _exists_as_dict_value, _kind_name_keys
 
-from loguru import logger
+# from loguru import logger
 import sys, os.path
-
-# !/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 #
+
+
+def _formats_supported(path):
+    for format in Inputers._formats_.keys():
+        if path.endswith(format):
+            return format
+    raise raise_PasoError("format of this file not supported: {}".format(path))
+
+
+def _url_path_exists(url):
+    """
+    Checks that a given URL is reachable.
+    :Parameters:
+        url: (str) url
+    Returns: (bool)
+    """
+    request = urllib.request.Request(url)
+    request.get_method = lambda: "HEAD"
+
+    try:
+        urllib.request.urlopen(request)
+        return True
+    except urllib.request.HTTPError:
+        return False
+
+
 def _inputer_exec(self, **kwargs):
 
     # must always be data = ' train' or no dataset =
@@ -44,12 +71,12 @@ def _inputer_exec(self, **kwargs):
     return result
 
 
-# def _create_path(kw, dictnary, directory_path, default):
-#
-#     if kw in dictnary:
-#         return directory_path + _dict_value(dictnary, kw, default)
-#     else:
-#         return default
+def _create_path(kw, dictnary, directory_path, default):
+
+    if kw in dictnary:
+        return directory_path + _dict_value(dictnary, kw, default)
+    else:
+        return default
 
 
 # todo refactor this mess
@@ -63,7 +90,7 @@ def _inputer_cvs(self, **kwargs):
     kw = "train"
     if kw in kwargs:
         self.train_path = self.directory_path + kwargs[kw]
-        if os.path.exists(self.train_path):
+        if os.path.exists(self.train_path) or _url_path_exists(self.train_path):
             if self.names != []:
                 train = pd.read_csv(self.train_path, names=self.names)
             elif self.names == []:
@@ -74,14 +101,6 @@ def _inputer_cvs(self, **kwargs):
                     self.train_path, self.directory_path
                 )
             )
-
-    kw = "url"
-    if kw in kwargs:
-        self.train_path = self.directory_path + kwargs[kw]
-        if self.names != []:
-            train = pd.read_csv(self.train_path, names=self.names)
-        elif self.names == []:
-            train = pd.read_csv(self.train_path)
 
     kw = "test"
     if kw in kwargs:
@@ -147,18 +166,40 @@ def _inputer_image3d(self, **kwargs):
 
 
 ### Inputer
-class Inputer(pasoFunction):
-    """
-    Input returns dataset.
-    Tne metadata is the instance attibutesof Inputer prperties.
-
-    Note:
-
-    Warning:
+class Inputers(pasoFunction):
 
     """
+    class to input file or url that is cvs or zip(cvs)
+    or an error will be raised.
 
-    __inputer__ = {
+    parameters: None
+
+    keywords:
+        input_path: (str) the data source source path name.
+            The path can be url or local. Format must be csv or csv/zip.
+
+        target: the dependent feature name of this data_set.
+
+        drop: (list) list of feature names to drop from
+            dataset, X,y are then extracted from dataset.
+
+    attributes set:
+        self.target: (str)
+        self.input_path = input_path
+
+    returns:
+        dataset: (DataFrame) complete dataset input from data source.
+    """
+
+    _formats_ = {
+        "csv": True,
+        "zip": True,
+        "data": True,
+        "sklearn.datasets": True,
+        "yaml": True,
+    }
+
+    _inputer_ = {
         "exec": _inputer_exec,
         "cvs": _inputer_cvs,
         "xls": _inputer_xls,
@@ -176,7 +217,7 @@ class Inputer(pasoFunction):
         "directory_path",
     ]
 
-    @pasoDecorators.InitWrap(narg=1)
+    @pasoDecorators.InitWrap()
     def __init__(self, **kwargs):
 
         """
@@ -188,6 +229,7 @@ class Inputer(pasoFunction):
 
         """
         super().__init__()
+        self.input_data_set = False
 
     def inputers(self):
         """
@@ -197,32 +239,127 @@ class Inputer(pasoFunction):
         Returns:
             List of available inputer names.
         """
-        return list(Inputer.__inputer__.keys())
+        return list(Inputers._inputer_.keys())
 
     def datasets(self):
         """
-        List type of files avaiable
+        List type of files available
 
         Parameters: None
 
         Returns: lists of datasets
 
         """
-        return Inputer._datasets_avaialable_
+        return Inputers._datasets_avaialable_
 
-    @pasoDecorators.TTWrap(array=False, narg=1)
-    def transform(self, *args, **kwargs):
-        # Todo:Rapids numpy
+    """
+    class to input file or url that is cvs or zip(cvs)
+    or an error will be raised.
+
+    parameters: None
+
+    keywords:
+        input_path: (str) the data source source path name.
+            The path can be url or local. Format must be csv or csv/zip.
+
+        target: the dependent feature name of this data_set.
+
+        drop: (list) list of feature names to drop from
+            dataset, X,y are then extracted from dataset.
+
+    attributes set:
+        self.target: (str)
+        self.input_path = input_path
+
+    returns:
+        dataset: (DataFrame) complete dataset input from data source.
+    """
+
+    _formats_ = {
+        "csv": True,
+        "zip": True,
+        "data": True,
+        "sklearn.datasets": True,
+        "yaml": True,
+    }
+
+    _inputer_ = {
+        "exec": _inputer_exec,
+        "cvs": _inputer_cvs,
+        "xls": _inputer_xls,
+        "xlsm": _inputer_xlsm,
+        "text": _inputer_text,
+        "image2D": _inputer_image2d,
+        "image3D": _inputer_image3d,
+    }
+
+    _datasets_avaialable_ = [
+        "train",
+        "valid",
+        "test",
+        "sampleSubmission",
+        "directory_path",
+    ]
+
+    @pasoDecorators.InitWrap()
+    def __init__(self, **kwargs):
+
         """
         Parameters:
-            ontology_filepath: path to yaml file containing dataset ontology
+            filepath: (string)
+            verbose: (boolean) (optiona) can be set. Default:True
 
-            Returns:
-                dictnary
-                    transformed X DataFrame
-            Raises:
+        Note:
 
-            Note:
+        """
+        super().__init__()
+        self.input_data_set = False
+
+    def inputers(self):
+        """
+        Parameters:
+            None
+
+        Returns:
+            List of available inputer names.
+        """
+        return list(Inputers._inputer_.keys())
+
+    def datasets(self):
+        """
+        List type of files available
+
+        Parameters: None
+
+        Returns: lists of datasets
+
+        """
+        return Inputers._datasets_avaialable_
+
+    @pasoDecorators.TTWrapNoArg(array=False)
+    def transform(self, *args, **kwargs):
+        # Todo:Rapids numpy
+        """"
+        main method to input file or url,
+        or an error will be raised.
+
+        parameters: None
+
+        keywords:
+            input_path: (str) the data source source path name.
+                The path can be url or local. Format must be csv or csv/zip.
+
+            target: the dependent feature name of this data_set.
+
+            drop: (list) list of feature names to drop from
+                dataset, X,y are then extracted from dataset.
+
+        attributes set:
+            self.target: (str)
+            self.input_path = input_path
+
+        returns:
+            dataset: (DataFrame) complete dataset input from data source.
         """
 
         # currently support only one inputer, very brittle parser
@@ -237,18 +374,69 @@ class Inputer(pasoFunction):
 
         # create instance of this particular learner
         # checks for non-optional keyword
-        if self.kind_name not in Inputer.__inputer__:
+        if self.kind_name not in Inputers._inputer_:
             raise_PasoError(
                 "transform; no format named: {} not in Inputers;: {}".format(
-                    self.kind_name, Inputer.__inputer__.keys()
+                    self.kind_name, Inputers._inputer_.keys()
                 )
             )
-        else:
-            return Inputer.__inputer__[self.kind_name](self, **self.kind_name_kwargs)
+
+        if _formats_supported(self.description_filepath):
+            self.input_data_set = True
+            return Inputers._inputer_[self.kind_name](self, **self.kind_name_kwargs)
+
+    @pasoDecorators.TTWrapNoArg(array=False)
+    def transform(self, *args, **kwargs):
+        # Todo:Rapids numpy
+        """"
+        main method to input file or url,
+        or an error will be raised.
+
+        parameters: None
+
+        keywords:
+            input_path: (str) the data source source path name.
+                The path can be url or local. Format must be csv or csv/zip.
+
+            target: the dependent feature name of this data_set.
+
+            drop: (list) list of feature names to drop from
+                dataset, X,y are then extracted from dataset.
+
+        attributes set:
+            self.target: (str)
+            self.input_path = input_path
+
+        returns:
+            dataset: (DataFrame) complete dataset input from data source.
+        """
+
+        # currently support only one inputer, very brittle parser
+        kwa = "target"
+        self.target = _dict_value(self.kind_name_kwargs, kwa, None)
+        _check_non_optional_kw(
+            kwa, "Inputer: needs target keyword. probably not set in ontological file."
+        )
+        # currently just  can only be in inputer/transformkwarg
+        kwa = "dataset"
+        self.dataset = _dict_value(kwargs, kwa, "train")
+
+        # create instance of this particular learner
+        # checks for non-optional keyword
+        if self.kind_name not in Inputers._inputer_:
+            raise_PasoError(
+                "transform; no format named: {} not in Inputers;: {}".format(
+                    self.kind_name, Inputers._inputer_.keys()
+                )
+            )
+
+        if _formats_supported(self.description_filepath):
+            self.input_data_set = True
+            return Inputers._inputer_[self.kind_name](self, **self.kind_name_kwargs)
 
 
-### Splitter
-class Splitter(pasoFunction):
+### Splitters
+class Splitters(pasoFunction):
     """
     Input returns dataset.
     Tne metadata is the instance attibutesof Inputer prperties.
@@ -259,7 +447,7 @@ class Splitter(pasoFunction):
 
     """
 
-    @pasoDecorators.InitWrap(narg=1)
+    @pasoDecorators.InitWrap()
     def __init__(self, **kwargs):
 
         """
@@ -272,9 +460,11 @@ class Splitter(pasoFunction):
         """
         super().__init__()
         self.inplace = False
+        return self
 
-    @pasoDecorators.TTWrap(array=False)
-    def transform(self, X, **kwargs):
+
+    @pasoDecorators.TTWrapXy(array=False)
+    def transform(self, X, y, **kwargs):
         # Todo:Rapids numpy
         """
         Parameters:
@@ -286,45 +476,16 @@ class Splitter(pasoFunction):
 
             Note:
         """
+        # note arrays
+        # stratify =True them reset to y
+        if "stratify" in self.kind_name_kwargs:
+            self.kind_name_kwargs["stratify"] = y
 
-        # c, can only be in kwarg in transform
-        kwa = "target"
-        self.target = _dict_value(kwargs, kwa, None)
-        _check_non_optional_kw(
-            self.target,
-            "target key not specified in splitter:.target {}".format(kwargs),
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, **self.kind_name_kwargs
         )
-        if self.target not in self.Xcolumns:
-            raise_PasoError(
-                "splitter: {}: unknown target:{} in {}".format(
-                    self, self.target, self.Xcolumns
-                )
-            )
-        else:
-            self.n_class = X[self.target].nunique()
-            self.class_names = _array_to_string(X[self.target].unique())
-            # note arrays
-            y_train = X[self.target].values
-            X_train = X[X.columns.difference([self.target])]
-            # stratify =True them reset to y
-            if "stratify" in self.kind_name_kwargs:
-                self.kind_name_kwargs["stratify"] = y_train
 
-            X_train, X_test, y_train, y_test = train_test_split(
-                X_train, y_train, **self.kind_name_kwargs
-            )
-
-            X_train = pd.DataFrame(
-                X_train, columns=[item for item in self.Xcolumns if item != self.target]
-            )
-            X_train[self.target] = y_train
-
-            X_test = pd.DataFrame(
-                X_test, columns=[item for item in self.Xcolumns if item != self.target]
-            )
-            X_test[self.target] = y_test
-
-            return X_train, X_test
+        return X_train, X_test, y_train, y_test
 
 
 ###

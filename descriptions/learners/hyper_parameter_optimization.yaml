@@ -1,0 +1,23 @@
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True #[optional]
+kind:
+    Bayesian:
+      genus: hyper_parameter_optimizer                            #[optional]
+      type: Bayesian
+      description: 'Bayesian hyper_parameter_optimizer' #[optional]
+      kwargs:
+        optimizer_metic: f1_score
+        optimizer: tpe
+        return_train_score: False
+        n_jobs : -1
+        verbose: 1
+
+
+
+
+
+
+
+
+

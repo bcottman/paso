@@ -1,26 +1,22 @@
 from setuptools import setup,find_packages
-v = '0.4.1
+
 setup(name='paso',
       packages=find_packages(),
-      version= v ,
-      description='A python package for data wrangling for Machine Learning and Deep Learning.',
-      long_description_content_type='text/markdown',
-      long_description_= """
+      version='0.5.0',
+      description='A python package for structured data machine learning and deep learning.',
+      long_description= """
 **paso** is a set of function and class method operations for data wrangling Machine
 for Learning and Deep Learning models.
 **paso** is Spanish for the English word step. A **paso** class or function is a step in your
 analysis pipeline. Because **paso** follows a protocol, the set of all operations in **paso** can be
 called a framework.
-
 Data engineers and Machine Learning Scientists appreciate the value of having their tools span
 across the data science workflow. The framework **paso** has been designed to fit in such all
 encompassing frameworks, as mlflow and Berkeley Data Analytics Stack(BDAS). It has been designed for
 pre-processing and post-processing data wrangling to and from learning packages such as PyTorch,
 Tensorflow, XGBoost and scikit-learn. It has been designed to work with a large number of evolving
 visialization tools such as facet, matplotlib, seaborn, Tensorboard, and plotly, to name just a few.
-
 You can contribute to the **paso** Project in many ways. Below are listed some of the areas:
-
 -  Fix a typo(s) in documentation.
 -  Improve some of the documentation.
 -  Fix typo or/and improve a docstring(s).
@@ -33,47 +29,19 @@ You can contribute to the **paso** Project in many ways. Below are listed some o
 -  Suggest a new feature.
 -  Implement a new feature.
 -  Improve or/and add a lesson.
-
 Remember to post in issues the proposed change and if accepted it will be closed. See
 `issues <https://github.com/bcottman/paso/issues>`__ or
 `projects <https://github.com/bcottman/paso/projects/1>`__ for open issues for the **paso** project.
-
 You can find a issue , or you can post a new issue, to work on. Next, or your alternative first
 step, you need to set-up your local **paso** development environment. Code, Documentat
 """,
       url='https://github.com/bcottman/paso',
-      download_url='https://github.com/bcottman/paso/dist/'+ v +'.tar.gz',
+      download_url='https://github.com/bcottman/paso/archive/0.2.8.tar.gz',
       author='Bruce Cottman',
       author_email='dr.bruce.cottman@gmail.com',
       keywords=['machine-learning', 'deep-learning', 'transformations', 'functional','data-analytics'],
-      copyright = 'Copyright (c) 2018, 2019 Bruce H. Cottman',
+      copyright = 'Copyright (c) 2018 Bruce H. Cottman',
       license='MIT',
-      # Classifiers help users find your project by categorizing it.
-      #
-      # For a list of valid classifiers, see https://pypi.org/classifiers/
-      classifiers=[  # Optional
-          # How mature is this project? Common values are
-          #   3 - Alpha
-          #   4 - Beta
-          #   5 - Production/Stable
-          'Development Status :: 3 - Alpha',
-
-          # Indicate who your project is intended for
-          'Intended Audience :: Developers',
-          'Topic :: Software Development :: Build Tools',
-
-          # Pick your license as you wish
-          'License :: OSI Approved :: MIT License',
-
-          # Specify the Python versions you support here. In particular, ensure
-          # that you indicate whether you support Python 2, Python 3 or both.
-          # These classifiers are *not* checked by 'pip install'. See instead
-          # 'python_requires' below.
-          'Programming Language :: Python :: 3.5',
-          'Programming Language :: Python :: 3.6',
-          'Programming Language :: Python :: 3.7',
-      ],
-
       install_requires=[
           'attrdict>=2.0.1',
           'category_encoders>=2.0.0',

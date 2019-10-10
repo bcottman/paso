@@ -1,0 +1,12 @@
+# see https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.BorderlineSMOTE.html#imblearn.over_sampling.BorderlineSMOTE
+# reference
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True #[optional]
+kind:
+  most_frequent:
+    description: "most_frequent value of feature is used for all NaN values"
+    genus: Imputer                             #[optional]
+    type: all-tpes
+    kwargs:
+      None: None

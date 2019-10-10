@@ -1,0 +1,26 @@
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True #[optional]
+kind:
+  Classification_metrics:
+    genus: learner                             #[optional]
+    type: Classification
+    description: classification_metrics  #[optional]
+    # [on/off, ascend/greater_is_better]
+    kwargs:
+      AOC: [True, True]
+      accuracy: [True, True]
+      confusion_matrix: [True, True]
+      f1_score: [True, True]
+      precision: [True, True]
+      recall : [True, True]
+      logloss: [True, False]
+
+
+
+
+
+
+
+
+

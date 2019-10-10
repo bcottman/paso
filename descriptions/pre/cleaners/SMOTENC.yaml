@@ -1,0 +1,17 @@
+# see https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.SMOTENC.html
+# reference
+project: HPKinetics/paso #[optional]
+  verbose: True  #[optional]
+inplace: True #[optional]
+genus: Balancer
+kind:
+  SMOTENC:
+    description: "balancer for class structured dataset with categorical features"
+    args: [categorical_features]
+    kwargs:
+        sampling_strategy: auto
+        k_neighbors: 10  # of neighbors
+        random_state: 777
+
+
+
