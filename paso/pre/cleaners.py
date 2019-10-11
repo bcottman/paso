@@ -26,8 +26,10 @@ from paso.base import _must_be_list_tuple_int
 from loguru import logger
 
 
+
 class Cleaners(pasoFunction):
     """
+    The class of data cleaners.
 
     """
 
@@ -53,6 +55,14 @@ class Cleaners(pasoFunction):
 
         """
         super().__init__()
+        self.transformed_Values_to_nan = False
+        self.transformed_Delete_NA_Features = False
+        self.transformed_Calculate_NA_ratio = False
+        self.transformed_delete_Duplicate_Features = False
+        self.transformed_Features_with_Single_Unique_Value = False
+        self.transformed_Features_Statistics = False
+        self.transformed_booleans = False
+        self.transformed_Feature_Feature_Correlation = False
 
     ####### 1
     def transform_Values_to_nan(self, X, values=[], inplace=True, verbose=True):
@@ -66,8 +76,7 @@ class Cleaners(pasoFunction):
         Parameters:
             X: DataFrame
 
-        Keywords:
-            missing_values: list or str, default []
+            values: list or str, default []
 
             inplace : bool, default True
             If True, do operation inplace and return None.
@@ -76,23 +85,6 @@ class Cleaners(pasoFunction):
 
         Returns: DataFrame
 
-        Note:
-            Detecting and correcting for flagged and outlier (good or bad)
-            values is an evolving area of research.
-            Parameters:
-                X: (DataFrame)
-
-                missing_values: (list) default []
-
-                inplace : bool, default True
-                If True, do operation inplace and return None.
-
-                verbose: bool
-
-
-            Raises:
-            Note:
-                So far, None of paso servives are invoked.
         """
 
         self.values = _must_be_list_tuple_int(values)
@@ -104,7 +96,7 @@ class Cleaners(pasoFunction):
         if verbose:
             logger.info("transform_Values_to_nan {}".format(str(self.values)))
 
-        self.transformed = True
+        self.transformed_Values_to_nan = True
 
         if inplace:
             return X
@@ -158,7 +150,7 @@ class Cleaners(pasoFunction):
                 )
             )
 
-        self.transformed = True
+        self.transformed_Delete_NA_Features = True
 
         if inplace:
             return X
@@ -195,7 +187,7 @@ class Cleaners(pasoFunction):
         if verbose:
             logger.info("transform_Calculate_NA_ratio")
 
-        self.transformed = True
+        self.transformed_Calculate_NA_ratio = True
 
         if inplace:
             X["NA_ratio"] = X.isnull().sum(axis=1) / total_feature_count
@@ -260,7 +252,7 @@ class Cleaners(pasoFunction):
             if verbose:
                 logger.info("Duplicate_Features_Removed: {}".format(str(drop_list)))
 
-        self.transformed = True
+        self.transform_delete_Duplicate_Features = True
 
         if inplace:
             return X
@@ -318,7 +310,7 @@ class Cleaners(pasoFunction):
             for f in efs:
                 y = X.drop(f, inplace=inplace, axis=1)
 
-        self.transformed = True
+        self.transformed_Features_with_Single_Unique_Value = True
 
         if inplace:
             return X
@@ -411,8 +403,11 @@ class Cleaners(pasoFunction):
         if verbose:
             logger.info("transform_Features_Statistics {}".format(statistics))
 
+        self.transformed_Features_Statistics = True
+
         return y
 
+#7
     def transform_booleans(self, X, inplace=True, verbose=True):
         """
         transform spurious bool  features and values from dataset. Encoding and scaling
@@ -443,18 +438,18 @@ class Cleaners(pasoFunction):
         for feature in bools:
             # assume ninuue = 1 removed
             #           if len(X[feature].unique()) == 2:
-            values = list(X[feature].unique())
+            self.boolean_values = list(X[feature].unique())
             X[feature].replace(to_replace=False, value=0, inplace=inplace)
             X[feature].replace(to_replace=True, value=1, inplace=inplace)
 
-        self.transform_booleans = True
+        self.transformed_booleans = True
 
         if verbose:
             logger.info("\ntransform_Booleans: {}".format(bools))
 
         return X
 
-    ########## 7
+    ########## 8
     def transform_Feature_Feature_Correlation(
         self,
         X,
@@ -533,6 +528,7 @@ class Cleaners(pasoFunction):
         corr = X.corr(method=self.corr_method)
         for f in corr.columns:
             corr.loc[((corr[f] < self.threshold) & (corr[f] > -self.threshold)), f] = 0
+        self.transformed_Feature_Feature_Correlation = True
         return corr
 
     def plot_corr(self, X, kind="numeric", mirror=False, xsize=10, ysize=10):
@@ -739,8 +735,8 @@ class Cleaners(pasoFunction):
 
         _Check_No_NA_Values(X)
         corr = X.corr()
-        fig, ax = plt.subplots(figsize=(xsize, ysize))
-        colormap = sns.diverging_palette(220, 10, as_cmap=True)
+        _,_ = plt.subplots(figsize=(xsize, ysize))
+        _ = sns.diverging_palette(220, 10, as_cmap=True)
         if kind == "numeric":
             plot_corr_numeric(corr)
         elif kind == "visual":
@@ -791,8 +787,7 @@ class Cleaners(pasoFunction):
 
     ########## 9
     def transform_delete_Features_not_in_train_or_test(
-        self, train, test, ignore=[], verbose=True, inplace=True
-    ):
+        self, train, test, ignore=[], verbose=True, inplace=True):
         """
         If the train or test datasets have features the other
         does not, then those features will have no predictive
@@ -813,6 +808,8 @@ class Cleaners(pasoFunction):
                 that is maybe present in the training dataset.
 
             inplace: bool
+
+            verbose: bool
 
         Returns:
             X: X: (DataFrame)
@@ -934,10 +931,10 @@ class Imputers(pasoFunction):
         Returns:
             List of available class inputers ames.
         """
-        return list(Imputers.__imputers__.keys())
+        return [k for k in Imputers.__imputers__.keys()]
 
     @pasoDecorators.TTWrap(array=False, _Check_No_NAs=False)
-    def transform(self, X, *args, verbose=True, inplace=True, features=None, **kwargs):
+    def transform(self, X, verbose=True, inplace=True, features=None, **kwargs):
         """
         method to transform bu imputing NaN values. Encoding and scaling
         and other data-set preprocessing should not be done here.
@@ -992,7 +989,7 @@ class Imputers(pasoFunction):
             imputer.fit(y[features])
             y[features] = imputer.transform(y[features])
         elif self.kind_name in Imputers._AdvancedImputer_stategies_:
-            raise NotImplemented()
+            raise NotImplementedError()
         else:
             raise_PasoError("Impute Strategy not found: {}".format(self.kind_name))
 

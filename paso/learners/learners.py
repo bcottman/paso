@@ -20,9 +20,9 @@ from sklearn.metrics import make_scorer
 
 # paso imports
 from paso.base import pasoModel, NameToClass, _stat_arrays_in_dict
-from paso.base import raise_PasoError, _exists_as_dict_value, _divide_dict
-from paso.base import _array_to_string, pasoDecorators, _kind_name_keys
-from paso.base import _add_dicts, _exists_Attribute
+#from paso.base import raise_PasoError, _exists_as_dict_value, _divide_dict
+from paso.base import _array_to_string, pasoDecorators
+from paso.base import _add_dicts
 
 
 # from paso.base import _dict_value2
@@ -354,7 +354,7 @@ class Learners(pasoModel):
         return ax
 
     @pasoDecorators.TTWrapXy(array=False)
-    def cross_validaors(self):
+    def cross_validaters(self):
         # Todo:Rapids numpy
         """
         Parameters:

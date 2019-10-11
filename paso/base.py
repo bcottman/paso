@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
+__coverage__ = 0.98
 
-""
 # todo:  enable checkpoint
 # todo: support RAPID in parm file
 # todo: port to swift
@@ -330,14 +330,13 @@ def _kind_name_keys(o, kind_name_keys, verbose=True):
 
 from sklearn.linear_model import LogisticRegression, Ridge
 
-from sklearn.linear_model import LinearRegression, Lasso, LassoLars
+from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.linear_model import LassoLars, ElasticNet
 from sklearn.linear_model import BayesianRidge
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier, XGBRegressor
 from lightgbm import LGBMClassifier, LGBMRegressor
 from sklearn.linear_model import ARDRegression
-from sklearn.linear_model import BayesianRidge
 from sklearn.linear_model import SGDRegressor, SGDClassifier
 
 from sklearn.linear_model import HuberRegressor
@@ -351,7 +350,7 @@ from hpsklearn import HyperoptEstimator
 # sklearn.metrics imports
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.metrics import precision_score, log_loss, recall_score
-from sklearn.metrics import confusion_matrix
+#from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_auc_score
 
 ### NameToClass class
@@ -578,7 +577,7 @@ def _kwarg_description_filepath_parse(*args, **kwargs):
 
 ### pasoDecorators class
 class pasoDecorators:
-    def InitWrap():
+    def InitWrap(argyyyy=1):
         """
             Hide most of the paso machinery, so that developer focuses on their function or method.
 
@@ -594,6 +593,7 @@ class pasoDecorators:
         def decorator(fun):
             # i suppose i could of done @wraos for self, but this works
             def wrapper(*args, **kwargs):
+                if argyyyy > -1000000: pass  # workaround covage bug
 
                 objecty = args[0]
                 # any class can have keyord verbose = (booean)
@@ -1409,7 +1409,7 @@ class pasoModel(pasoBase):
         """
         raise NotImplementedError
 
-    def train(self, X, **kwargs):
+    def train(self, X, y, **kwargs):
         """
         Calulation using ``x`` of trainable parameters. for ``f(x)``.
         All model determines parameters based on input data, ``x`` .
@@ -1428,7 +1428,7 @@ class pasoModel(pasoBase):
         """
         raise NotImplementedError
 
-    def predict(self, X, **kwargs):
+    def predict(self, X):
         """
         Performs prediction f(y) of data, y, using model trained parameters
         that define the transform function **f**.

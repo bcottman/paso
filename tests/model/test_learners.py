@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+__author__ = "Bruce_H_Cottman"
+__license__ = "MIT License"
+__coverage__ = 0.69
+
 from pathlib import Path
 import pytest
 import numpy as np
@@ -6,7 +12,7 @@ from loguru import logger
 # paso imports
 
 from paso.base import Paso, Param, PasoError
-from paso.pre.inputers import Inputers, Splitters
+from paso.pre.inputers import Inputers
 from paso.learners.learners import Learners
 
 fp = "../../parameters/base.yaml"
@@ -264,11 +270,11 @@ def test_evaluate_pima():
     learner = Learners(description_filepath="../../descriptions/learners/LGBC.yaml")
     learner.train(X, y, checkpoint="pima_LGBMC.ckp")
 
-    assert len(learner.evaluate(X, y).keys()) == 8
+    assert len(learner.evaluate(X, y).keys()) == 7
 
 
 # 17
-def test_evaluate_pima():
+def test_evaluate_otto_group():
     inputer = Inputers(
         description_filepath="../../descriptions/pre/inputers/otto_group.yaml"
     )
@@ -278,7 +284,7 @@ def test_evaluate_pima():
     learner = Learners(description_filepath="../../descriptions/learners/XGBC.yaml")
     learner.train(X, y, checkpoint="pima_LGBMC.ckp")
 
-    assert len(learner.evaluate(X, y).keys()) == 8
+    assert len(learner.evaluate(X, y).keys()) == 7
 
 
 # 18
@@ -297,8 +303,7 @@ def test_learner_cross_validate_LGBC():
         description_filepath="../../descriptions/learners/Cross_validation_classification.yaml",
     )
 
-    assert learner.evaluate(X, y) == 5
-
+    assert len(learner.evaluate(X, y).keys()) == 8
 
 # 19
 def test_learner_cross_validate_RFC_iris_milticlaas():
@@ -318,7 +323,7 @@ def test_learner_cross_validate_RFC_iris_milticlaas():
 
 
 # 20
-def test_learner_cross_validate_RFC_iris_milticlass_evaluate_AON():
+def test_learner_cross_validate_RFC_iris_milticlass_evaluate_AO():
     inputer = Inputers(description_filepath="../../descriptions/pre/inputers/iris.yaml")
     dataset = inputer.transform()
     y = dataset[inputer.target].values
@@ -335,7 +340,7 @@ def test_learner_cross_validate_RFC_iris_milticlass_evaluate_AON():
 
 
 # 21
-def test_learner_cross_validate_RFC_iris_milticlass_evaluate_AON():
+def test_learner_cross_validate_RFC_iris_milticlass_evaluate_test_accuracy():
     inputer = Inputers(description_filepath="../../descriptions/pre/inputers/iris.yaml")
     dataset = inputer.transform()
     y = dataset[inputer.target].values

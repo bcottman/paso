@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+__author__ = "Bruce_H_Cottman"
+__license__ = "MIT License"
+
+__coverage__ = 0.84
+
 import pandas as pd
 
 import pytest
@@ -9,6 +16,7 @@ from paso.pre.inputers import Inputers, Splitters
 
 fp = "../../parameters/base.yaml"
 session = Paso(parameters_filepath=fp).startup()
+
 # 0
 def test_paso_param_file():
     assert session.parameters_filepath == fp
@@ -228,11 +236,6 @@ def test_spitter_transform_otto_group():
     )
 
 
-def test_inputer_otto_group_test():
-    o = Inputers(description_filepath="../../descriptions/pre/inputers/otto_group.yaml")
-    test = o.transform(dataset="test")
-    assert test.shape == (144368, 94)
-
 
 # 21
 def test_splitter_transform__onto_group():
@@ -344,5 +347,5 @@ def test_spltter_transform_creditcard_20__url_cvs_zip():
     splitter = Splitters(
         description_filepath="../../descriptions/pre/inputers/split_20_stratify.yaml"
     )
-    train, valid, y_train, y_valid = splitter.transform(X, y)
+    train, valid, _, _ = splitter.transform(X, y)
     assert train.shape == (227845, 30) and valid.shape == (56962, 30)
