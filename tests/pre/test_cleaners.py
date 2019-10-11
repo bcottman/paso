@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+__coverage__ = 0.88
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License" ""
 import warnings
@@ -40,17 +40,11 @@ x_pd, y_pg = create_dataset(n_samples=1000, weights=(0.1, 0.2, 0.7))
 session = Paso(parameters_filepath="../../parameters/lesson.1.yaml").startup()
 
 # 1
-def test_transform_Values_to_nan_no_passed_arg_type_error():
-    g = Cleaners()
-    with pytest.raises(TypeError):
-        g.transform_Values_to_nan()
+
 
 
 # 2
-def test_transform_Values_to_nan_passed_arg_type_error(City):
-    g = Cleaners()
-    with pytest.raises(TypeError):
-        g.transform_Values_to_nan(City, values=[], unplace=False, verbose=False)
+
 
 
 # 3
@@ -160,7 +154,7 @@ def test_transform_Calculate_NA_has_NA_ratio(City):
 
 
 # 14
-def test_transform_Calculate_NA_has_NA_ratio(City):
+def test_transform_Calculate_NA_has_NA_ratio_c(City):
     g = Cleaners()
     City["bf"] = 999
     City["bf2"] = 2

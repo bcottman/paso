@@ -239,83 +239,9 @@ class Inputers(pasoFunction):
         Returns:
             List of available inputer names.
         """
-        return list(Inputers._inputer_.keys())
+        return [k for k in Inputers._inputer_.keys()]
 
-    def datasets(self):
-        """
-        List type of files available
-
-        Parameters: None
-
-        Returns: lists of datasets
-
-        """
-        return Inputers._datasets_avaialable_
-
-    """
-    class to input file or url that is cvs or zip(cvs)
-    or an error will be raised.
-
-    parameters: None
-
-    keywords:
-        input_path: (str) the data source source path name.
-            The path can be url or local. Format must be csv or csv/zip.
-
-        target: the dependent feature name of this data_set.
-
-        drop: (list) list of feature names to drop from
-            dataset, X,y are then extracted from dataset.
-
-    attributes set:
-        self.target: (str)
-        self.input_path = input_path
-
-    returns:
-        dataset: (DataFrame) complete dataset input from data source.
-    """
-
-    _formats_ = {
-        "csv": True,
-        "zip": True,
-        "data": True,
-        "sklearn.datasets": True,
-        "yaml": True,
-    }
-
-    _inputer_ = {
-        "exec": _inputer_exec,
-        "cvs": _inputer_cvs,
-        "xls": _inputer_xls,
-        "xlsm": _inputer_xlsm,
-        "text": _inputer_text,
-        "image2D": _inputer_image2d,
-        "image3D": _inputer_image3d,
-    }
-
-    _datasets_avaialable_ = [
-        "train",
-        "valid",
-        "test",
-        "sampleSubmission",
-        "directory_path",
-    ]
-
-    @pasoDecorators.InitWrap()
-    def __init__(self, **kwargs):
-
-        """
-        Parameters:
-            filepath: (string)
-            verbose: (boolean) (optiona) can be set. Default:True
-
-        Note:
-
-        """
-        super().__init__()
-        self.input_data_set = False
-
-    def inputers(self):
+    def formats(self):
         """
         Parameters:
             None
@@ -323,7 +249,7 @@ class Inputers(pasoFunction):
         Returns:
             List of available inputer names.
         """
-        return list(Inputers._inputer_.keys())
+        return [k for k in Inputers._formats_.keys()]
 
     def datasets(self):
         """
@@ -336,54 +262,6 @@ class Inputers(pasoFunction):
         """
         return Inputers._datasets_avaialable_
 
-    @pasoDecorators.TTWrapNoArg(array=False)
-    def transform(self, *args, **kwargs):
-        # Todo:Rapids numpy
-        """"
-        main method to input file or url,
-        or an error will be raised.
-
-        parameters: None
-
-        keywords:
-            input_path: (str) the data source source path name.
-                The path can be url or local. Format must be csv or csv/zip.
-
-            target: the dependent feature name of this data_set.
-
-            drop: (list) list of feature names to drop from
-                dataset, X,y are then extracted from dataset.
-
-        attributes set:
-            self.target: (str)
-            self.input_path = input_path
-
-        returns:
-            dataset: (DataFrame) complete dataset input from data source.
-        """
-
-        # currently support only one inputer, very brittle parser
-        kwa = "target"
-        self.target = _dict_value(self.kind_name_kwargs, kwa, None)
-        _check_non_optional_kw(
-            kwa, "Inputer: needs target keyword. probably not set in ontological file."
-        )
-        # currently just  can only be in inputer/transformkwarg
-        kwa = "dataset"
-        self.dataset = _dict_value(kwargs, kwa, "train")
-
-        # create instance of this particular learner
-        # checks for non-optional keyword
-        if self.kind_name not in Inputers._inputer_:
-            raise_PasoError(
-                "transform; no format named: {} not in Inputers;: {}".format(
-                    self.kind_name, Inputers._inputer_.keys()
-                )
-            )
-
-        if _formats_supported(self.description_filepath):
-            self.input_data_set = True
-            return Inputers._inputer_[self.kind_name](self, **self.kind_name_kwargs)
 
     @pasoDecorators.TTWrapNoArg(array=False)
     def transform(self, *args, **kwargs):
@@ -433,6 +311,7 @@ class Inputers(pasoFunction):
         if _formats_supported(self.description_filepath):
             self.input_data_set = True
             return Inputers._inputer_[self.kind_name](self, **self.kind_name_kwargs)
+
 
 
 ### Splitters
