@@ -1,7 +1,6 @@
 # paso
 
-**paso** is a set of function and class method operations for data wrangling for Machine 
-Learning and Deep Learning models. **paso** is Spanish for the English word step. 
+**paso** is a A python package for structured data machine learning and deep learning. **paso** is Spanish for the English word step. 
 A **paso** class or function is a step in your analysis pipeline. 
 Because **paso** follows a protocol, the set of all operations in **paso** 
 can be called a framework. 

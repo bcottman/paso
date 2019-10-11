@@ -9,17 +9,18 @@ from matplotlib import rcParams
 import warnings
 
 warnings.filterwarnings("ignore")
+
+
 # sklearn.metrics imports
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.metrics import precision_score, log_loss, recall_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_auc_score
-
-# from sklearn.metrics import brier_score_loss
+from sklearn.metrics import make_scorer
 
 # paso imports
-from paso.base import pasoModel, NameToClass, _check_non_optional_kw
-from paso.base import raise_PasoError, _exists_as_dict_value, _dict_value
+from paso.base import pasoModel, NameToClass, _stat_arrays_in_dict
+from paso.base import raise_PasoError, _exists_as_dict_value, _divide_dict
 from paso.base import _array_to_string, pasoDecorators, _kind_name_keys
 from paso.base import _add_dicts, _exists_Attribute
 
@@ -30,12 +31,27 @@ from loguru import logger
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 # class Learner
-class Learner(pasoModel):
+class Learners(pasoModel):
     """
     Currently, **paso** supports only the sklearn RandomForest
     package. This package is very comprehensive with
     examples on how to train ad predict different types of
     modelss data.
+
+    Methods:
+        train(X,y)
+        evaluate(X,y) -> metrics->{}
+            predict(y)
+            predict_proba(y)
+        plot_confusion_matrix(cm)
+        cross_vadididation(X,y)
+            train
+            evaluate
+        hyper_paranmeter_tune(X,y)
+            cross_vadididation(X,y)
+                train
+                evaluate
+
 
     Note:
 
@@ -43,7 +59,7 @@ class Learner(pasoModel):
 
     """
 
-    @pasoDecorators.InitWrap(narg=1)
+    @pasoDecorators.InitWrap()
     def __init__(self, **kwargs):
 
         """
@@ -55,6 +71,32 @@ class Learner(pasoModel):
 
         """
         super().__init__()
+        self.debug = True
+        self.model = None
+        self.dataset_name = None
+        self.model_name = None
+        self.model_type = None
+        #        self.n_early_stopping = 10
+        #        self.metric_optimize = "f1_score"
+        self.inputed = False
+        self.cleaned = False
+        self.cleaned_booleans = False
+        self.encoded = False
+        self.scaled = False
+        self.trained = False
+        self.predicted = False
+        self.predicted_proba = False
+        self.evaluated = False
+        self.metrics = None
+        self.metrics_scoring = {
+            k: make_scorer(v[0], **v[1])
+            for k, v in NameToClass.__metrics__["Classification"].items()
+        }
+        self.metrics_names = [
+            k for k in NameToClass.__metrics__["Classification"].keys()
+        ]
+        self.cross_validated = False
+        self.tuned_parameters = False
 
     def learners(self):
         """
@@ -66,12 +108,13 @@ class Learner(pasoModel):
         """
         return list(NameToClass.__learners__.keys())
 
-    @pasoDecorators.TTWrap(array=False)
-    def train(self, X, *args, **kwargs):
+    @pasoDecorators.TTWrapXy(array=False)
+    def train(self, X, y, **kwargs):
         # Todo:Rapids numpy
         """
         Parameters:
-            X:  pandas dataFrame
+            X:  pandas dataFrame, dataset[-taget]
+            y: numpy array, target
         Returns:
             self
         """
@@ -82,33 +125,7 @@ class Learner(pasoModel):
                     self.ontology_kwargs
                 )
             )
-        if _exists_Attribute(self, "target"):
-            if self.target in self.Xcolumns:
-                self.y_train = X[self.target].values
-                self.X_train = X[X.columns.difference([self.target])].values
-            # no target set,
-            else:
-                raise_PasoError(
-                    "learner:fit: unknown target:{} in {} for learner: {}".format(
-                        self.target, self.Xcolumns, self.kind_name
-                    )
-                )
-        else:
-            raise_PasoError(
-                "learner:train: target: in must be a keyword in call to train: {}".format(
-                    kwargs
-                )
-            )
 
-        # list(self.kind.keys())[0]
-        # self.kind_name_key = _exists_as_dict_value(self.kind, self.kind_name)
-        # # Thus order keyword must be given even if []
-        # kind_name_kwargs = _kind_name_keys(
-        #     self, self.kind_name_key, verbose=self.verbose
-        # )
-
-        # create instance of this particular learner
-        # checks for non-optional keyword
         if self.kind_name not in NameToClass.__learners__:
             raise_PasoError(
                 "Train; no operation named: {} not in learners;: {}".format(
@@ -116,116 +133,116 @@ class Learner(pasoModel):
                 )
             )
         else:
+            self.model_name = self.kind_name
             self.model = NameToClass.__learners__[self.kind_name](
                 **self.kind_name_kwargs
             )
-            self.model.fit(self.X_train, self.y_train)
-            self.clf_type = self.type
+            self.model.fit(X, y)
+            self.model_type = self.type
 
-        # operation on this class by keyword order
-        kwa = "order"
-        order_ops = _dict_value(
-            self.kind_name_keys, kwa, []
-        )  # should be a lis or error, no constant
-        for id_ops, ops_name in enumerate(order_ops):
-            ops_name_key = _exists_as_dict_value(self.kind_name_keys, ops_name)
-            ops_name_kwargs = _kind_name_keys(self, ops_name_key, verbose=self.verbose)
-            if self.verbose:
-                logger.info(
-                    "\n clf-ops-name:{}\n kwargs: {}".format(ops_name, ops_name_kwargs)
-                )
-            self.model = NameToClass.__learners__[ops_name](
-                self.model, **ops_name_kwargs
-            )
-            self.model.fit(self.X_train, self.y_train)
+        self.trained = True
 
         return self
 
-    @pasoDecorators.PredictWrap(array=False, narg=2)
-    def predict(self, X, **kwargs):
+    def predict(self, X):
+        """
+        parameters:
+            X: (DataFrame\) column(s) are independent features of dataset
+
+        Returns:
+            y_pred: (numpy vector of ints)  predicted target.
+
+        Warning:
+            Assumes train has been called.
+
+
+        """
+        # enforce order of method calls
+        if not self.trained:
+            raise_PasoError("Must be 'fit' before predict. ")
+        self.predicted = True
+        return self.model.predict(X)
+
+    def predict_proba(self, X):
+        """
+        parameters:
+            X: (DataFrame\) column(s) are independent features of dataset
+
+        Returns:
+            y_pred: (numpy vector of ints)  predicted target probability
+
+        Warning:
+            Assumes train has been called.
+        """
+        # enforce order of method calls
+        if not self.trained:
+            raise_PasoError("Must be ['fit'] before predict_proba. ")
+
+        self.predicted_proba = True
+        return self.model.predict_proba(X)
+
+    @pasoDecorators.TTWrapXy(array=False)
+    def evaluate(self, X, y, **kwargs):
         """
         Parameters:
-            X_test:  pandas dataFrame #Todo:Dask numpy
+            X: (DataFrame\) column(s) are independent features of dataset
+            y: (numpy vector )  target or dependent feature of dataset.
 
-            inplace: (CURRENTLY IGNORED)
-                    False (boolean), replace 1st argument with resulting dataframe
-                    True:  (boolean) ALWAYS False
         Returns:
-            (DataFrame): predict of X
+            {'f1_score': value, 'logloss': value}
+
         """
         # assured by predictwrap that train has been called already
-        _check_non_optional_kw(
-            self.measure, "measure kw must be present in call to predict"
-        )
-        if self.clf_type == "Classification":
-            if self.measure:
-                self.n_class = X[self.target].nunique()
-                self.class_names = _array_to_string(X[self.target].unique())
-                self.y_test = X[self.target].values
-                self.X_test = X[X.columns.difference([self.target])].values
-                y_pred = self.model.predict(self.X_test)
-                self.wrong_predicted_class = X[X[self.target] != y_pred]  # df
-                y_predp = self.model.predict_proba(self.X_test)
-                logger.debug("type:{}.".format(self.type))
-                if self.clf_type == "Classification":
-                    self.metrics = _add_dicts(
-                        self.__metric_class(y_pred, self.y_test),
-                        self.__metric_class_probability(y_predp, self.y_test),
-                    )
-                    if self.verbose:
-                        cm = confusion_matrix(self.y_test, y_pred)
-                        self.metrics = _add_dicts(
-                            self.metrics, {"confusion_matrix": cm}
-                        )
-                        if self.verbose:
-                            # Plot non-normalized confusion matrix
-                            self._plot_confusion_matrix(
-                                cm,
-                                self.class_names,
-                                normalize=False,
-                                title="Confusion matrix, without normalization",
-                            )
-                            # Plot normalized confusion matrix
-                            self._plot_confusion_matrix(
-                                cm,
-                                self.class_names,
-                                normalize=True,
-                                title="Normalized confusion matrix",
-                            )
-                            plt.show()
-                else:
-                    if self.verbose:
-                        logger.info(
-                            "measures of error NOT evaluated for model:{}".format(
-                                self.kind_name
-                            )
-                        )
+        # _check_non_optional_kw(
+        #     self.measure, "measure kw must be present in call to predict"
+        # )
+        if self.model_type == "Classification":
+            self.n_class = len(np.unique(y))
+            self.class_names = _array_to_string(np.unique(y))
+            y_pred = self.predict(X)
+            y_pred_proba = self.predict_proba(X)
+            self.wrong_predicted_class = X[y != y_pred]  # df
+            self.metrics = _add_dicts(
+                self._metric_classification(y, y_pred),
+                self._metric_classification_probability(y, y_pred_proba),
+            )
+            cm = confusion_matrix(y, y_pred)
+            self.metrics = _add_dicts(self.metrics, {"confusion_matrix": cm})
 
             # todo TBD
-            elif self.clf_type == "Regression":
-                pass
+        elif self.model_type == "Regression":
+            pass
 
-        return [y_pred, y_predp]
+        self.evaluated = True
+        return self.metrics
 
-    def __metric_class(self, y_pred, y_act):
-        """
-            calculates classification metrics
+    def _metric_classification(self, y_act, y_pred):
+        def __metric_classification(self, y_act, y_pred):
+            """
+                calculates classification metrics
 
-            Parameters:
-                y_pred:
-                y_act:
+                Parameters:
+                    y_act: (numpy vector ) target or dependent feature of dataset.
+                    y_pred: (numpy vector of ints)  predicted target.
 
-            return: None
+                return: dict {
+                                "accuracy": accuracy,
+                                "precision": precision,
+                                "recall": recall,
+                                "f1": f1,
+                                "AOC": AOC
+                                }
 
-        """
+            """
+
         accuracy = accuracy_score(y_act, y_pred)
         precision = precision_score(y_act, y_pred, average="macro")
         recall = recall_score(y_act, y_pred, average="macro")
         f1 = f1_score(y_act, y_pred, average="macro")
-        AOC = 0
+        AOC = "must be binary class"
         if self.n_class == 2:
             AOC = roc_auc_score(y_act, y_pred, average="macro")
-
+            # todo:%use NameClass list
         return {
             "accuracy": accuracy,
             "precision": precision,
@@ -234,15 +251,15 @@ class Learner(pasoModel):
             "AOC": AOC,
         }
 
-    def __metric_class_probability(self, y_pred_probability, y_act):
+    def _metric_classification_probability(self, y_act, y_pred_probability):
         """
-            calculates classification metrics based on cass probability
+            calculates classification metrics based on class probability
 
             Parameters:
-                y_pred_prob:
-                y_act:
+                y_act: (numpy vector ) target or dependent feature of dataset.
+                y_pred: (numpy vector of ints)  predicted target.
 
-            return: None
+            return: (dict) {"logloss": logLoss}
         """
         logLoss = log_loss(y_act, y_pred_probability, eps=1e-15, normalize=True)
         if self.n_class == 2:
@@ -251,13 +268,32 @@ class Learner(pasoModel):
             brier_loss = 0.0
             return {"brier_loss": brier_loss, "logloss": logLoss}
         else:
+            # todo:%use NameClass list
             return {"logloss": logLoss}
+
+    def plot_confusion_matrix(self, cm, normalize=False):
+        # Plot non-normalized confusion matrix
+        if normalize:
+            title = (
+                "Confusion matrix, with normalization"
+                + self.model_name
+                + "  "
+                + self.model_type
+            )
+        else:
+            title = "Confusion matrix " + self.model_name + "  " + self.model_type
+
+        self._plot_confusion_matrix(
+            cm, self.class_names, normalize=normalize, title=title
+        )
+
+        plt.show()
 
     def _plot_confusion_matrix(
         self, cm, class_names, normalize=False, title=None, cmap=plt.cm.Blues
     ):
         """
-        This function prints and plots the confusion matrix.
+        This function gprahically plots the confusion matrix.
         Normalization can be applied by setting `normalize=True`.
         """
         if not title:
@@ -316,6 +352,94 @@ class Learner(pasoModel):
                 )
         fig.tight_layout()
         return ax
+
+    @pasoDecorators.TTWrapXy(array=False)
+    def cross_validaors(self):
+        # Todo:Rapids numpy
+        """
+        Parameters:
+            None
+
+        Returns:
+            List of available models names.
+        """
+        return [k for k in NameToClass.__cross_validators__.keys()]
+
+    @pasoDecorators.TTWrapXy(array=False, kwarg_description_filepath_parse=True)
+    def cross_validate(self, X, y, **kwargs):
+        # Todo:Rapids numpy
+        """
+        Parameters:
+            X: (DataFrame\) column(s) are independent features of dataset
+            y: (numpy vector )  target or dependent feature of dataset.
+        Returns: d
+            dict: statistics of metrics
+        """
+        # currently support only one learner, very brittle parser
+        if self.kind == {}:
+            raise_PasoError(
+                "keyword kind must be present at top level:{}:".format(
+                    self.description_kwargs
+                )
+            )
+
+        if self.kind_name not in NameToClass.__cross_validators__:
+            raise_PasoError(
+                "cross_validate; no operation named: {} __cross_validaters__ in cross_validaters;: {}".format(
+                    self.kind_name, NameToClass.__cross_validators__.keys()
+                )
+            )
+        else:
+            self.cross_validate_name = self.kind_name
+            self.cross_validate_model = NameToClass.__cross_validators__[self.kind_name]
+            self.cv = self.kind_name_kwargs["cv"]
+            # only binary
+            if len(np.unique(y)) > 2:
+                del self.metrics_scoring["AOC"]
+            scores = self.cross_validate_model(
+                self.model, X, y, scoring=self.metrics_scoring, **self.kind_name_kwargs
+            )
+            self.cv_metrics = sorted(scores.keys())
+            self.cross_validate_model_type = self.type
+
+        self.cross_validated = True
+
+        return _stat_arrays_in_dict(scores)
+
+    @pasoDecorators.TTWrapXy(array=False)
+    def hp_optimize(self, X, y, **kwargs):
+        # Todo:Rapids numpy
+        """
+        Parameters:
+            X:  pandas dataFrame
+        Returns:
+            self
+        """
+        # currently support only one learner, very brittle parser
+        if self.kind == {}:
+            raise_PasoError(
+                "keyword kind must be present at top level:{}:".format(
+                    self.ontology_kwargs
+                )
+            )
+
+        if self.kind_name not in NameToClass._hp_optimizeers__:
+            raise_PasoError(
+                "hp_optimizers; no operation named: {} not in : {}".format(
+                    self.kind_name, NameToClass.__hp_optimizers__.keys()
+                )
+            )
+        else:
+            self.hp_optimize_name = self.kind_name
+            self.hp_optimize_model = NameToClass.__hp_optimizers__[self.kind_name](
+                **self.kind_name_kwargs
+            )
+            self.hp_optimize_model.fit(X, y)
+            self.hp_optimizee_model_type = self.type
+
+        self.hp_optimized = True
+
+        return self
 
 
 ########

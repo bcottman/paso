@@ -1,0 +1,18 @@
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True #[optional]
+kind:
+  Regression_metrics:
+    genus: learner                            #[optional]
+    type: Regression
+    description: regression_metrics  #[optional]
+    kwargs:
+      None: None
+
+
+
+
+
+
+
+

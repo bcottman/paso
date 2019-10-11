@@ -1,0 +1,21 @@
+# see https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.BorderlineSMOTE.html#imblearn.over_sampling.BorderlineSMOTE
+# reference
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True #[optional]
+kind:
+  SMOTE:
+    description: "SMOTE overbalance all classes"
+    genus: Balancer                             #[optional]
+    type: sklearn
+    kwargs:
+        sampling_strategy: 'not majority'
+        k_neighbors: 7  # of neighbors, high-> centroid, low-> boarder of cluster
+        random_state: 777
+
+
+
+
+
+
+

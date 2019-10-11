@@ -328,7 +328,7 @@ class LambertScaler(BaseEstimator, TransformerMixin):
 __ScalerDict__["LambertScaler"] = LambertScaler
 
 # paso Scaler to __ScalerDict__
-class Scaler(pasoModel):
+class Scalers(pasoModel):
     """
     Parameters:
         encoderKey: (str) One of 'StandardScaler', 'MinMaxScaler', 'Normalizer', 'MaxAbsScaler', 'RobustScaler'

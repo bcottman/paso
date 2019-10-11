@@ -2,7 +2,7 @@
 model-methods: []
 function-methods: [log,parameters,transform,traun,predict,read,write,load,save]
 
-project: Common Ground Soltions/paso
+project: HPKinetics/paso #[optional]
 
 name: lesson.2
 

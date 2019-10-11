@@ -1,0 +1,26 @@
+## ontology_keys
+# small # of tags for this recursive syntax
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True #[optional]
+kind:
+  LogisticRegression:
+    #kind-<name>-keys
+    genus: learner                                #[optional]
+    type: Classification
+    description: Generic XGBoost for classification  #[optional]
+    kwargs:
+    #name-kwargs   [initial-value, range, opt-type]
+      min_split_gain: [0, [], 'choice']
+      n_jobs: [-1,  [], 'constant']
+      verbosity: [1,  [], 'constant']
+      random_state: [77,  [], 'constant']
+
+
+
+
+
+
+
+
+

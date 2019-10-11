@@ -40,7 +40,7 @@ class toCategory(pasoFunction):
         
         
         Parameters:
-            verbose: (boolean) default: True
+            verbose: ( boolean) default: True
                 Logging on/off (``verbose=False``)
 
     """

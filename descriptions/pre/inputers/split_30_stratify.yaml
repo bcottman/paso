@@ -1,0 +1,13 @@
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True
+kind:
+    TrTest_split:
+        genus: Splitter
+        description: 'split into train-test dataset'
+        type: yaml
+        kwargs:
+            test_size: 0.30 # set to zero to turn off
+            shuffle: True
+            stratify: True
+            random_state: 77

@@ -42,24 +42,73 @@ def raise_PasoError(msg):
     raise PasoError(msg)
 
 
+def Xy_to_DataFrame(X, y, target):
+    """
+        Tranform X(DataFrame and y (numpy vector) into one DataFame X
+
+        Note: Memory is saved as y added to X dataFrame in place.
+
+    :param X: DataFrame
+    :param y: numpy vector
+    :param target: sring
+    :return: X
+    """
+    X[target] = y
+    return None
+
+
+def DataFrame_to_Xy(X, target):
+    y = X[target].values
+    X = X[X.columns.difference([target])]
+    return X, y
+
+
 def _must_be_list_tuple_int(attribute):
     if isinstance(attribute, (tuple, list)):
         return attribute
-    elif isinstance(attribute, int):
+    elif isinstance(attribute, (str, int, float)):
         return attribute
     else:
         raise_PasoError(
-            "{} must be tiple,list or int. unsupported type: {}".format(
-                self.nbins, type(self.nbins)
+            "{} must be tiple,list, str, float, or int. unsupported type: {}".format(
+                attribute, type(attribute)
             )
         )
 
 
 @jit
-def _divide_dict(d1, n):
-    for k in d1.keys():
-        d1[k] = d1[k] / n
-    return d1
+def _divide_dict(d, n):
+    return {k: d[k] / n for k in d}
+
+
+# @jit
+def _mean_arrays_in_dict(d):
+    return {k: np.mean(d[k]) for k in d}
+
+
+# @jit
+def _median_arrays_in_dict(d):
+    return {k: np.median(d[k]) for k in d}
+
+
+# @jit
+def _std_arrays_in_dict(d):
+    return {k: np.std(d[k]) for k in d}
+
+
+# @jit
+def _var_arrays_in_dict(d):
+    return {k: np.var(d[k]) for k in d}
+
+
+# @jit
+def _stat_arrays_in_dict(d):
+    return {
+        "mean": _mean_arrays_in_dict(d),
+        "median": _median_arrays_in_dict(d),
+        "std": _std_arrays_in_dict(d),
+        "var": _var_arrays_in_dict(d),
+    }
 
 
 def _add_dicts(d1, d2):
@@ -67,19 +116,6 @@ def _add_dicts(d1, d2):
         if k in d2.keys():
             d1[k] = d1[k] + d2[k]
     return {**d2, **d1}
-
-
-def _sq_add_dicts(d1, d2):
-    for k in d1.keys():
-        if k in d2.keys():
-            d1[k] = d1[k] + d2[k] ** 2
-    return {**d2, **d1}
-
-
-def _sq_dict(d1):
-    for k in d1.keys():
-        d1[k] = d1[k] * d1[k]
-    return {**d1}
 
 
 def _array_to_string(array):
@@ -110,12 +146,22 @@ def is_DataFrame(X):
     return isinstance(X, (pd.core.frame.DataFrame, pd.core.series.Series))
 
 
-def _new_feature_names(X, labels):
+def _new_feature_names(X, names):
+    """
+    Change feature nanmes of a dataframe to names.
+
+    Parameters:
+        X: Dataframe
+        names: list,str
+
+    Returns: X
+
+    """
     # X is inplace because only changing column names
-    if labels == []:
+    if names == []:
         return X
     c = list(X.columns)
-    if isinstance(labels, (list, tuple)):
+    if isinstance(names, (list, tuple)):
         c[0 : len(labels)] = labels
     else:
         c[0:1] = [labels]
@@ -234,13 +280,13 @@ def _exists_key(dictnary, key, error=True):
     else:
         if error:
             raise_PasoError(
-                "learner:fit/predict:{} not specified through keyword call or ontological file for learner: {}".format(
+                "learner:fit/predict:{} not specified through keyword call or description file for: {}".format(
                     attribute, self.name
                 )
             )
         else:
             logger.warning(
-                "learner:fi/predict:{} not specified for learner(not very likely-error?): {}".format(
+                "{} not specified. very likely NOT error): {}".format(
                     attribute, self.name
                 )
             )
@@ -282,12 +328,31 @@ def _kind_name_keys(o, kind_name_keys, verbose=True):
     return o.kind_name_kwargs
 
 
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression, Ridge
 
+from sklearn.linear_model import LinearRegression, Lasso, LassoLars
+from sklearn.linear_model import LassoLars, ElasticNet
+from sklearn.linear_model import BayesianRidge
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier, XGBRegressor
+from lightgbm import LGBMClassifier, LGBMRegressor
+from sklearn.linear_model import ARDRegression
+from sklearn.linear_model import BayesianRidge
+from sklearn.linear_model import SGDRegressor, SGDClassifier
+
+from sklearn.linear_model import HuberRegressor
+
+
+from sklearn.model_selection import cross_validate
 from sklearn.ensemble import BaggingClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from hpsklearn import HyperoptEstimator
+
+# sklearn.metrics imports
+from sklearn.metrics import f1_score, accuracy_score
+from sklearn.metrics import precision_score, log_loss, recall_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import roc_auc_score
 
 ### NameToClass class
 class NameToClass:
@@ -296,21 +361,65 @@ class NameToClass:
     """
 
     __learners__ = {
+        "LGBMClassifier": LGBMClassifier,
+        "SGDClassifier": SGDClassifier,
         "RandomForest": RandomForestClassifier,  # ......estimator
+        "XGBClassifier": XGBClassifier,
+        "ARDRegression": ARDRegression,
+        "BayesianRidge": BayesianRidge,
+        "ElasticNet": ElasticNet,
+        "HuberRegressor": HuberRegressor,
+        "Lasso": Lasso,
+        "LassoLars": LassoLars,
+        "LGBCRegression": LGBMRegressor,
         "LinearRegression": LinearRegression,
+        "LogisticRegression": LogisticRegression,
+        "Ridge": Ridge,
+        "SGDRegressor": SGDRegressor,
+        "XGBRegression": XGBRegressor,
+    }
+
+    __cross_validators__ = {
+        "cross_validate": cross_validate,
         "BaggingClassifier": BaggingClassifier,  # ......cross-validators,
         "CalibratedClassifierCV": CalibratedClassifierCV,
-        "Hyperopt": HyperoptEstimator,  # ......optimimizors
+    }
+
+    __hyper_parameter_tuners__ = {"Hyperopt": HyperoptEstimator}
+
+    __metrics__ = {
+        #   Type            metric_name metric_func kwargs              greater_is_better  needs_proba
+        "Classification": {
+            "AOC": [roc_auc_score, {"greater_is_better": True, "needs_proba": False}],
+            "accuracy": [
+                accuracy_score,
+                {"greater_is_better": True, "needs_proba": False},
+            ],
+            "f1_score": [
+                f1_score,
+                {"greater_is_better": True, "needs_proba": False, "average": "micro"},
+            ],
+            "precision": [
+                precision_score,
+                {"greater_is_better": True, "needs_proba": False, "average": "micro"},
+            ],
+            "recall": [
+                recall_score,
+                {"greater_is_better": True, "needs_proba": False, "average": "micro"},
+            ],
+            "logloss": [log_loss, {"greater_is_better": False, "needs_proba": True}],
+        },
+        "Regression": {},
+        "Clustering": {},
+        "Dimension_Reduction": {},
     }
 
 
-def _narg_boiler_plate(
-    objecty, narg, _Check_No_NAs, fun, array, nreturn, *args, **kwargs
-):
+def _narg_boiler_plate(objecty, narg, _Check_No_NAs, fun, array, *args, **kwargs):
     """ hidden postamble for transform, train wrap"""
     if narg == 1:
         result = fun(objecty, **kwargs)
-    elif len(args) >= 2 and len(args) <= 4:
+    elif narg == 2:
         if objecty.inplace:
             X = args[1]
         else:
@@ -319,26 +428,38 @@ def _narg_boiler_plate(
         objecty.Xcolumns = X.columns
         if _Check_No_NAs:
             _Check_No_NA_Values(X)
-        if len(args) == 2:
-            args = []  # klug for AugmentBy_class
-        elif len(args) == 3:
-            args = args[1:]
-        elif len(args) == 4:
-            args = args[2:]
+
+        # if len(args) == 2:
+        #     args = []  # klug for AugmentBy_class
         # pre
         if array:
-            result = fun(objecty, X.to_numpy(), *args, **kwargs)
+            result = fun(objecty, X.to_numpy(), **kwargs)
         else:
-            result = fun(objecty, X, *args, **kwargs)
+            result = fun(objecty, X, **kwargs)
+    elif narg == 3:
+        if objecty.inplace:
+            X = args[1]
+            y = args[2]
+        else:
+            X = args[1].copy()
+            y = args[2].copy()
+        _Check_is_DataFrame(X)
+        objecty.Xcolumns = X.columns
+        if _Check_No_NAs:
+            _Check_No_NA_Values(X)
+        if array:
+            result = fun(objecty, X.to_numpy(), y, **kwargs)
+        else:
+            result = fun(objecty, X, y, **kwargs)
     else:
-        raise_PasoError("5 or greater *args not currenlty supported in TTWrap")
+        raise_PasoError(" _;  X ; X,y only currently supported in TTWrap")
     return result
 
 
-def _head_wrap(narg, *args, **kwargs):
+def _kwargs_parse(*args, **kwargs):
     """ generic preamble for ontological ok kw for transform, train wrap
-        ontological pairs:
-            project: Common Ground Soltions/paso #[optional]
+        description pairs:
+            project: HPKinetics/paso #[optional]
             verbose: True  #[optional]
             inplace: True #[optional]
 
@@ -346,44 +467,48 @@ def _head_wrap(narg, *args, **kwargs):
                 <class name>:
         kwarg pairs:
             target: (learner only)
-            measure: (learner only)
     """
     objecty = args[0]
-    if len(args) != narg:
-        raise_PasoError(
-            "_head_wrap:Must be {} arguments. was:{},({})".format(narg, len(args), args)
-        )
-    kwa = "ontological_filepath"  # set in __init__
+
+    kwa = "description_filepath"  # set in __init__
     if _exists_Attribute(objecty, kwa):
         # not supposed to be in transform kw
-        objecty.ontology_kwargs = Param(
-            filepath=objecty.ontological_filepath
+        objecty.description_kwargs = Param(
+            filepath=objecty.description_filepath
         ).parameters_D
 
-    if kwa in kwargs:
-        raise_PasoError(
-            "ontological_filepath not call in instance creation. Transform/Train  wrong place."
-        )
-    # if in  ontological file then keyword will have precedence
+    # if kwa in kwargs:
+    #     raise_PasoError(
+    #         "description_filepath not given in instance creation. Transform/Train  wrong place."
+    #     )
+
+    # if in  description file then keyword will have precedence
     # check keywords in passes argument stream
     # non-optional kw default as None
-    # head of ntooical file
+    # head of description file
     kwa = "project"
-    objecty.project = _dict_value2(kwargs, objecty.ontology_kwargs, kwa, None)
+    objecty.project = _dict_value2(kwargs, objecty.description_kwargs, kwa, None)
 
     kwa = "inplace"
-    objecty.inplace = _dict_value2(kwargs, objecty.ontology_kwargs, kwa, True)
+    objecty.inplace = _dict_value2(kwargs, objecty.description_kwargs, kwa, True)
     validate_bool_kwarg(objecty.inplace, kwa)
 
     kwa = "verbose"
-    objecty.verbose = _dict_value2(kwargs, objecty.ontology_kwargs, kwa, True)
+    objecty.verbose = _dict_value2(kwargs, objecty.description_kwargs, kwa, True)
     validate_bool_kwarg(objecty.verbose, kwa)
 
+    kwa = "dataset_name"  # opional
+    objecty.verbose = _dict_value2(kwargs, objecty.description_kwargs, kwa, "")
+
     if objecty.verbose:
-        logger.info("Loaded Ontological file:{} ".format(objecty.ontological_filepath))
+        logger.info(
+            "Loaded description_filepath file:{} ".format(objecty.description_filepath)
+        )
 
     kwa = "kind"
-    objecty.kind = _exists_as_dict_value(objecty.ontology_kwargs, kwa)  # ui not- error
+    objecty.kind = _exists_as_dict_value(
+        objecty.description_kwargs, kwa
+    )  # ui not- error
 
     # check keywords in passes argument stream
     # non-optional kw are initiated with None
@@ -392,7 +517,7 @@ def _head_wrap(narg, *args, **kwargs):
     if objecty.kind == {}:
         raise_PasoError(
             "keyword kind must be present at top level:{}:\n or indented key-vakuee pairs do not follow kind".format(
-                objecty.ontology_kwargs
+                objecty.description_kwargs
             )
         )
     # currently 1st and only as value as dict
@@ -414,27 +539,51 @@ def _head_wrap(narg, *args, **kwargs):
         )
 
     # currently just learner/training models, can only be in kwarg in train
-    kwa = "measure"
-    objecty.measure = _dict_value2(kwargs, objecty.ontology_kwargs, kwa, True)
-    validate_bool_kwarg(objecty.measure, kwa)
+    # kwa = "measure"
+    # objecty.measure = _dict_value2(kwargs, objecty.description_kwargs, kwa, True)
+    # validate_bool_kwarg(objecty.measure, kwa)
 
     # currently just learner/training models, can only be in kwarg in train
     kwa = "target"
-    objecty.target = _dict_value2(kwargs, objecty.ontology_kwargs, kwa, None)
+    objecty.target = _dict_value2(kwargs, objecty.description_kwargs, kwa, None)
 
     return objecty
 
 
+def _kwarg_description_filepath_parse(*args, **kwargs):
+    """ generic preamble for description ok kw for transform, train wrap
+        description pairs:
+            project: HPKinetics/paso #[optional]
+            verbose: True  #[optional]
+            inplace: True #[optional]
+
+            kind:
+                <class name>:
+        kwarg pairs:
+            target: (learner only)
+    """
+    objecty = args[0]
+
+    default = ""
+    objecty.description_filepath = _dict_value(kwargs, "description_filepath", default)
+    if objecty.description_filepath == default:
+        logger.warning(
+            "No description_filepath instance:, args: {},kwargs: {}".format(
+                args, kwargs
+            )
+        )
+
+    return True
+
+
 ### pasoDecorators class
 class pasoDecorators:
-    def InitWrap(array=False, narg=1):
+    def InitWrap():
         """
             Hide most of the paso machinery, so that developer focuses on their function or method.
 
-            Parameters:
-                array: (boolean), if true pass array  # todo check if ever needed
-                narg: (int). number of args expected bt wrapped function
-             Keyword-args:
+            Parameters: None
+
                 verbose
 
             return:
@@ -446,22 +595,16 @@ class pasoDecorators:
             # i suppose i could of done @wraos for self, but this works
             def wrapper(*args, **kwargs):
 
-                if len(args) != narg:
-                    raise_PasoError(
-                        "InitWrap:Must be one arguments:was{} expedted{} args{}".format(
-                            len(args), narg, args
-                        )
-                    )
                 objecty = args[0]
                 # any class can have keyord verbose = (booean)
 
                 default = ""
-                objecty.ontological_filepath = _dict_value(
-                    kwargs, "ontological_filepath", default
+                objecty.description_filepath = _dict_value(
+                    kwargs, "description_filepath", default
                 )
-                if objecty.ontological_filepath == default:
+                if objecty.description_filepath == default:
                     logger.warning(
-                        "No ontological_filepath instance:, args: {},kwargs: {}".format(
+                        "No description_filepath instance:, args: {},kwargs: {}".format(
                             args, kwargs
                         )
                     )
@@ -472,9 +615,7 @@ class pasoDecorators:
 
         return decorator
 
-        # todo split learner into learner, cv file
-
-    def TTWrap(array=False, _Check_No_NAs=True, narg=2, nreturn=1):
+    def TTWrapNoArg(array=False, _Check_No_NAs=True):
         """
             Hide most of the paso machinery, so that developer focuses on their function or method.
 
@@ -489,9 +630,69 @@ class pasoDecorators:
 
         def decorator(fun):
             def wrapper(*args, **kwargs):
-                objecty = _head_wrap(narg, *args, **kwargs)
+                objecty = _kwargs_parse(*args, **kwargs)
                 result = _narg_boiler_plate(
-                    objecty, narg, _Check_No_NAs, fun, array, nreturn, *args, **kwargs
+                    objecty, 1, _Check_No_NAs, fun, array, *args, **kwargs
+                )
+                # post
+                objecty.transformed = True
+                objecty.trained = True
+                return result
+
+            return wrapper
+
+        return decorator
+
+    def TTWrap(array=False, _Check_No_NAs=True):
+        """
+            Hide most of the paso machinery, so that developer focuses on their function or method.
+
+            Parameters:
+                array: (boolean) False
+                    Pass a Pandas dataframe (False) or numpy array=True.  Mainly for compatibility
+                    with scikit which requires arrays.
+
+            Parm/wrap Class Instance attibutes: these are attibutes of objecty.fun (sef.x) set in this wrapper, if present in Parameter file
+
+        """
+
+        def decorator(fun):
+            def wrapper(*args, **kwargs):
+                objecty = _kwargs_parse(*args, **kwargs)
+                result = _narg_boiler_plate(
+                    objecty, 2, _Check_No_NAs, fun, array, *args, **kwargs
+                )
+                # post
+                objecty.transformed = True
+                objecty.trained = True
+                return result
+
+            return wrapper
+
+        return decorator
+
+    def TTWrapXy(
+        array=False, _Check_No_NAs=True, kwarg_description_filepath_parse=False
+    ):
+        """
+            Hide most of the paso machinery, so that developer focuses on their function or method.
+
+            Parameters:
+                array: (boolean) False
+                    Pass a Pandas dataframe (False) or numpy array=True.  Mainly for compatibility
+                    with scikit which requires arrays.
+
+            Parm/wrap Class Instance attibutes: these are attibutes of objecty.fun (sef.x) set in this wrapper, if present in Parameter file
+
+        """
+
+        def decorator(fun):
+            def wrapper(*args, **kwargs):
+                if kwarg_description_filepath_parse:
+                    _kwarg_description_filepath_parse(*args, **kwargs)
+                objecty = _kwargs_parse(*args, **kwargs)
+                result = _narg_boiler_plate(
+                    objecty, 3, _Check_No_NAs, fun, array, *args, **kwargs
                 )
                 # post
                 objecty.transformed = True
@@ -521,13 +722,13 @@ class pasoDecorators:
                 if not objecty.trained:
                     raise_PasoError("Train must be called before predict")
                 objecty.measure = _dict_value2(
-                    kwargs, objecty.ontology_kwargs, "measure", ""
+                    kwargs, objecty.description_kwargs, "measure", ""
                 )
                 if len(args) != narg:
                     raise_PasoError(
                         "PredictWrap:Must be {} arguments. was:{} ".format(narg, args)
                     )
-                if len(args) == 2:
+                if len(args) >= 2:
                     Xarg = args[1]
                 if objecty.trained == False:
                     raise PasoError(
@@ -600,18 +801,18 @@ class Log(object):
             additional_log_files
                 init: {}
 
-        filepath :
-            default: ../parameters/default.yaml
+        filepath :base
+            default: ../parameters/base.yaml
 
         Returns:
-            ``loguru`` objecty instance
+            ``loguru`` object instance
 
         Example:
             >>> from paso.base import Paso
             >>> session =  Paso().startup()
             `` paso 4.6.2019 12:16:19 INFO Log started
                 paso 4.6.2019 12:16:19 INFO ========================================
-                paso 4.6.2019 12:16:19 INFO Read in parameter file: ../parameters/default.yaml``
+                paso 4.6.2019 12:16:19 INFO Read in parameter file: ../parameters/base.yaml``
             >>> x =1
             >>> logger.info("x:{}".format(x))
 
@@ -655,7 +856,7 @@ class Param(object):
     """
     Read in from file(s) the parameters for this service.
 
-        default.yml
+        base.yml
         experiment-1 (optional)
         ....         (optional)
 
@@ -687,7 +888,7 @@ class Param(object):
 
         Note:
             Currently bootstrap to <name>.yaml or from attribute ``experiment_environment``
-            from default ``../parameters/default.yaml``  thus any <na00me>.yaml can be used
+            from default ``../parameters/base.yaml``  thus any <na00me>.yaml can be used
             without change to current code. Only new code need be added to
             support <nth name>.yaml.
 
@@ -707,7 +908,7 @@ class Param(object):
 
         """
         if filepath == "":
-            filepath = "../parameters/default.yaml"
+            filepath = "../parameters/base.yaml"
 
         Param.gfilepath = filepath
         Param.parameters_D = self._read_parameters(filepath)
@@ -729,7 +930,7 @@ class Paso(object):
     """
     Creates
         1. Log: default name paso
-        2. parameter file : default: '../parameters/default.yaml'
+        2. parameter file : default: '../parameters/base.yaml'
         3. list of pasoes invoked.
 
         Parameters:
@@ -758,7 +959,7 @@ class Paso(object):
         self.log = None
 
         if parameters_filepath == "":
-            self.parameters_filepath = "../parameters/default.yaml"
+            self.parameters_filepath = "../parameters/base.yaml"
         else:
             self.parameters_filepath = parameters_filepath
 
@@ -1003,10 +1204,8 @@ class pasoFunction(pasoBase):
 
     def __init__(self, **kwargs):
         super().__init__()
-        # function
-        self.transformed = (
-            False
-        )  # transform of x tp f(x) has been accomplied on this instance
+        # transform of x tp f(x) has been accomplished on this instance
+        self.transformed = False
 
     def reset(self):
         """
@@ -1022,9 +1221,7 @@ class pasoFunction(pasoBase):
         if os.path.exists(self.checkpoint_file_name):
             os.remove(self.checkpoint_file_name)
 
-        self.transformed = (
-            False
-        )  # transform of x tp f(x) has been accomplied on this instance
+        self.transformed = False
         self.checkpoint = False  # for transform or train
         self.checkpoint_file_name = ""  # for transform or train
 
