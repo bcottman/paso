@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-__coverage__ = 0.88
+__coverage__ = 0.84
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License" ""
 import warnings
@@ -48,136 +48,136 @@ session = Paso(parameters_filepath="../../parameters/lesson.1.yaml").startup()
 
 
 # 3
-def test_transform_Values_to_nan_none(City):
+def test_Values_to_nan_none(City):
     g = Cleaners()
     assert (
-        g.transform_Values_to_nan(City, inplace=True, values=[]).isnull().sum().sum()
+        g.values_to_nan(City, inplace=True, values=[]).isnull().sum().sum()
         == 0
     )
 
 
 # 4
-def test_transform_Values_to_nan_list0_0(City):
+def test_Values_to_nan_list0_0(City):
     g = Cleaners()
     assert (
-        g.transform_Values_to_nan(City, inplace=True, values=[0.0]).isnull().sum().sum()
+        g.values_to_nan(City, inplace=True, values=[0.0]).isnull().sum().sum()
         == 843
     )
 
 
 # 5
-def test_transform_Values_to_nan_0_0(City):
+def test_Values_to_nan_0_0(City):
     g = Cleaners()
     assert (
-        g.transform_Values_to_nan(City, inplace=True, values=0.0).isnull().sum().sum()
+        g.values_to_nan(City, inplace=True, values=0.0).isnull().sum().sum()
         == 843
     )
 
 
 # 6
-def test_transform_Values_to_nan_0_0_ne(City):
+def test_Values_to_nan_0_0_ne(City):
     g = Cleaners()
     assert (
-        (g.transform_Values_to_nan(City, inplace=False, values=0.0) != City).any().any()
+        (g.values_to_nan(City, inplace=False, values=0.0) != City).any().any()
     )
 
 
 # 7
-def test_transform_Delete_NA_Features_to_999_2(City):
+def test_delete_NA_features_to_999_2(City):
     g = Cleaners()
     City["bf"] = 999
     City["bf2"] = 2
-    g.transform_Values_to_nan(City, inplace=True, values=[2, 999])
+    g.values_to_nan(City, inplace=True, values=[2, 999])
     assert (
-        g.transform_Delete_NA_Features(City, inplace=True, threshold=0.8).shape[1] == 14
+        g.delete_NA_Features(City, inplace=True, threshold=0.8).shape[1] == 14
     )
 
 
 # 8
-def test_transform_Delete_NA_Features_to_999(City):
+def test_delete_NA_Features_to_999(City):
     g = Cleaners()
     City["bf"] = 999
     City["bf2"] = 2
     z = City.shape[1] - 1
-    g.transform_Values_to_nan(City, inplace=True, values=[2])
+    g.values_to_nan(City, inplace=True, values=[2])
     assert (
-        g.transform_Delete_NA_Features(City, inplace=True, threshold=0.8).shape[1] == z
+        g.delete_NA_Features(City, inplace=True, threshold=0.8).shape[1] == z
     )
 
 
 # 10
-def test_transform_Delete_NA_Features_to1_threshold(City):
+def test_delete_NA_Features_to1_threshold(City):
     g = Cleaners()
     City["bf"] = 999
     City["bf2"] = 2
     z = City.shape[1] - 0
-    g.transform_Values_to_nan(City, inplace=True, values=[-1])
+    g.values_to_nan(City, inplace=True, values=[-1])
     assert (
-        g.transform_Delete_NA_Features(City, inplace=True, threshold=1.0).shape[1] == z
+        g.delete_NA_Features(City, inplace=True, threshold=1.0).shape[1] == z
     )
 
 
 # 11
-def test_transform_Delete_NA_Features_to_big_threshold(City):
+def test_delete_NA_Features_to_big_threshold(City):
     g = Cleaners()
     City["bf"] = 999
     City["bf2"] = 2
     z = City.shape[1] - 0
-    g.transform_Values_to_nan(City, inplace=True, values=[2])
+    g.values_to_nan(City, inplace=True, values=[2])
     with pytest.raises(PasoError):
         assert (
-            g.transform_Delete_NA_Features(City, inplace=True, threshold=1.1).shape[1]
+            g.delete_NA_Features(City, inplace=True, threshold=1.1).shape[1]
             == z
         )
 
 
 # 12
-def test_transform_Calculate_NA_ratio(City):
+def test_calculate_NaN_ratio(City):
     g = Cleaners()
     City["bf"] = 999
     City["bf2"] = 2
     z = City.columns
-    g.transform_Values_to_nan(City, inplace=True, values=[2, 999])
-    c = g.transform_Calculate_NA_ratio(City, inplace=True).columns
+    g.values_to_nan(City, inplace=True, values=[2, 999])
+    c = g.calculate_NaN_ratio(City, inplace=True).columns
     assert len(c) == 17
 
 
 # 13
-def test_transform_Calculate_NA_has_NA_ratio(City):
+def test_Calculate_NA_has_NaN_ratio(City):
     g = Cleaners()
     City["bf"] = 999
     City["bf2"] = 2
     z = City.columns
-    g.transform_Values_to_nan(City, inplace=True, values=[2, 999])
-    c = g.transform_Calculate_NA_ratio(City, inplace=True).columns
-    assert "NA_ratio" in c
+    g.values_to_nan(City, inplace=True, values=[2, 999])
+    c = g.calculate_NaN_ratio(City, inplace=True).columns
+    assert "NaN_ratio" in c
 
 
 # 14
-def test_transform_Calculate_NA_has_NA_ratio_c(City):
+def test_Calculate_NA_has_NaN_ratio_c(City):
     g = Cleaners()
     City["bf"] = 999
     City["bf2"] = 2
     z = City.columns
-    g.transform_Values_to_nan(City, inplace=True, values=[2, 999])
-    c = g.transform_Calculate_NA_ratio(City, inplace=True)["NA_ratio"].sum()
-    assert c == 2.047430830039525
+    g.values_to_nan(City, inplace=True, values=[2, 999])
+    c = g.calculate_NaN_ratio(City, inplace=True)["NaN_ratio"].sum()
+    assert c == 64.75
 
 
 # 15
-def test_transform_delete_Duplicate_Featuress(City):
+def test_delete_Duplicate_Featuress(City):
     g = Cleaners()
     City["bf"] = 999
     City["bf2"] = City["bf"]
-    assert g.transform_delete_Duplicate_Features(City, inplace=True).shape[1] == 15
+    assert g.delete_Duplicate_Features(City, inplace=True).shape[1] == 15
 
 
 # 15b
-def test_transform_delete_Duplicate_Featuress4(City):
+def test_delete_Duplicate_Featuress4(City):
     g = Cleaners()
     City["bf"] = 999
     City["bf4"] = City["bf3"] = City["bf2"] = City["bf"]
-    assert g.transform_delete_Duplicate_Features(City, inplace=True).shape[1] == 15
+    assert g.delete_Duplicate_Features(City, inplace=True).shape[1] == 15
 
 
 # 16
@@ -201,77 +201,77 @@ def test_cleaner_statistics(City):
 
 
 # 17
-def test_transform_Features_Statistics_bad_arg(City):
+def test_feature_Statistics_bad_arg(City):
     g = Cleaners()
     with pytest.raises(PasoError):
-        g.transform_Features_Statistics(
+        g.feature_Statistics(
             City, concat=False, statistics=[" sum"], inplace=True, verbose=True
         )
 
 
 # 18
-def test_transform_Features_Statistics_3_stats(City):
+def test_feature_Statistics_3_stats(City):
     g = Cleaners()
-    c = g.transform_Features_Statistics(
+    c = g.feature_Statistics(
         City,
         concat=False,
         statistics=["sum", "mean", "kurt"],
         inplace=True,
         verbose=True,
     )
-    assert c.shape == (3, 14)
+    assert c.shape == (506, 3)
 
 
 # 19
-def test_transform_Features_Statistics_mean(City):
+def test_feature_Statistics_mean(City):
     g = Cleaners()
-    c = g.transform_Features_Statistics(
+    c = g.feature_Statistics(
         City, concat=False, statistics=["mean"], inplace=True, verbose=True
     )
-    assert c.shape == (1, 14)
+    assert c.shape == (506, 1)
 
 
 # 20
-def test_transform_Features_Statistics_all(City):
+def test_feature_Statistics_all(City):
     g = Cleaners()
-    c = g.transform_Features_Statistics(
+    c = g.feature_Statistics(
         City, concat=False, statistics=["all"], inplace=True, verbose=True
     )
-    assert c.shape == (12, 14)
+    assert c.shape == (506, 12)
 
 
 # 21
-def test_transform_Features_Statistics_3_stats_concat(City):
+def test_feature_Statistics_3_stats_concat(City):
     g = Cleaners()
-    c = g.transform_Features_Statistics(
+    c = g.feature_Statistics(
         City,
         concat=True,
         statistics=["sum", "mean", "kurt"],
         inplace=True,
         verbose=True,
     )
-    assert c.shape == (509, 14)
+    assert c.shape == (506, 17)
 
 
 # 22
-def test_transform_Features_with_Single_Unique_Value3(City):
+def test_delete_Features_with_Single_Unique_Value3(City):
     g = Cleaners()
     City["bf"] = 999
     City["bf2"] = 2
     City["bf3"] = 1
     assert (
-        g.transform_Features_with_Single_Unique_Value(City, inplace=True).shape[1] == 14
+        g.delete_Features_with_Single_Unique_Value(City, inplace=True).shape[1] == 14
     )
 
 
 # 23
-def test_transform_Features_with_Single_Unique_Value_ignore(City):
+def test_delete_Features_with_Single_Unique_Value_ignore(City):
     g = Cleaners()
     City["bf"] = 999
     City["bf2"] = 2
     City["bf3"] = 1
     assert (
-        g.transform_Features_with_Single_Unique_Value(
+        g.delete_Features_with_Single_Unique_Value(
             City, ignore=["bf3"], inplace=True
         ).shape[1]
         == 15
@@ -279,57 +279,55 @@ def test_transform_Features_with_Single_Unique_Value_ignore(City):
 
 
 # 24
-def test_transform_Feature_Correlation(City):
+def test_Feature_Correlation(City):
     g = Cleaners()
     g.plot_corr(City)
-    assert g.transform_Feature_Feature_Correlation(
-        City, verbose=True, inplace=True
-    ).shape == (14, 14)
+    assert g.feature_Feature_Correlation(
+        City, verbose=True).shape == (14, 14)
 
 
 # 25
-def test_transform_Feature_Correlation_flowers(flower):
+def test_Feature_Correlation_flowers(flower):
     g = Cleaners()
     g.plot_corr(flower, kind="visual")
-    assert g.transform_Feature_Feature_Correlation(
-        flower, verbose=True, inplace=True
-    ).shape == (5, 5)
+    assert g.feature_Feature_Correlation(
+        flower, verbose=True).shape == (5, 5)
 
 
 # 26
-def test_transform_delete_Features_null(flower):
+def test_delete_features_null(flower):
     g = Cleaners()
-    assert g.transform_delete_Features(flower, verbose=True, inplace=True).shape == (
+    assert g.delete_Features(flower, verbose=True, inplace=True).shape == (
         150,
         5,
     )
 
 
 # 27
-def test_transform_delete_Features_all(flower):
+def test_delete_features_all(flower):
     g = Cleaners()
-    assert g.transform_delete_Features(
+    assert g.delete_Features(
         flower, features=flower.columns, verbose=True, inplace=True
     ).shape == (150, 0)
 
 
 # 28
-def test_transform_delete_Features_but12(City):
+def test_delete_features_but12(City):
     g = Cleaners()
-    assert g.transform_delete_Features(
+    assert g.delete_Features(
         City, features=City.columns[3:5], verbose=True, inplace=True
     ).shape == (506, 12)
 
 
 # 29
-def test_transform_delete_Features_not_in_train_or_test(City):
+def test_delete_features_not_in_train_or_test(City):
     g = Cleaners()
     train = City.copy()
     City["bf"] = 999
     City["bf2"] = 2
     City["bf3"] = 1
     test = City.copy()
-    g.transform_delete_Features_not_in_train_or_test(
+    g.delete_Features_not_in_train_or_test(
         train, test, ignore=["bf3"], inplace=True
     )
     assert train.shape[1] == (test.shape[1] - 1)
@@ -404,13 +402,8 @@ def test_Augmenter_bad_ratio(flower):
 
 
 # 35
-# def test_Balancer_nbad_key(flower):
-#     o = Balancers(description_filepath="../../descriptions/pre/cleaners/SMOTE.yaml")
-#     X,y = DataFrame_to_Xy(flower,"TypeOf")
-#     X, y = o.transform(X, y, xratio= 1.0)
-#     with pytest.raises(PasoError):
-#         assert (X.shape == (300, 4) and y.shape == (300, ))
-
+def test_imputer_given():
+    assert len(Imputers().imputers()) == 6
 
 # 36
 def test_imputer_features_no_given():
@@ -419,8 +412,8 @@ def test_imputer_features_no_given():
     imp = Imputers(
         description_filepath="../../descriptions/pre/cleaners/most_frequent_impute.yaml"
     )
-    with pytest.raises(PasoError):
-        train = imp.transform(train, inplace=True, verbose=True)
+    assert imp.transform(train, inplace=True, verbose=True).shape == (1484,9)
+
 
 
 # 37
@@ -461,12 +454,13 @@ def test_imputer_features_allnans():
     imp = Imputers(
         description_filepath="../../descriptions/pre/cleaners/most_frequent_impute.yaml"
     )
-    assert (
-        imp.transform(train, features=["Alm"], inplace=True, verbose=True)
-        .isnull()
-        .all()
-        .all()
-    ) == False
+    with pytest.raises(PasoError):
+        assert (
+            imp.transform(train, features=["Alm"], inplace=True, verbose=True)
+            .isnull()
+            .all()
+            .all()
+        ) == False
 
 
 # 40
@@ -486,25 +480,25 @@ def test_imputer_features_nans_found():
 
 
 # 41
-def test_transform_boo_lnone(City):
+def test_boo_lnone(City):
     g = Cleaners()
     train = City.copy()
-    g.transform_booleans(train, inplace=True)
+    g.boolean_to_integer(train, inplace=True)
     assert (train == City).all().all()
 
 
 # 41
-def test_transform_booL_some(City):
+def test_booL_some(City):
     o = Inputers(description_filepath="../../descriptions/pre/inputers/yeast3.yaml")
     train = o.transform(dataset="train")
     g = Cleaners()
     train["Alm"] = False
     train.loc[0, "Alm"] = True
-    assert g.transform_booleans(train, inplace=True).loc[0, "Alm"] == 1
+    assert g.boolean_to_integer(train, inplace=True).loc[0, "Alm"] == 1
 
 
 # 41
-def test_transform_booL_some_not_true(City):
+def test_booL_some_not_true(City):
     o = Inputers(description_filepath="../../descriptions/pre/inputers/yeast3.yaml")
     train = o.transform(dataset="train")
     g = Cleaners()
@@ -513,6 +507,36 @@ def test_transform_booL_some_not_true(City):
     train["Alm"] = False
     train.loc[0, "Alm"] = True
     assert (
-        g.transform_booleans(train, inplace=True).loc[0, "Alm"] == 1
+        g.boolean_to_integer(train, inplace=True).loc[0, "Alm"] == 1
         and train.loc[0, "Mcg"] == 0
     )
+# 42
+def test_feature_Statistics_3_column_stats(City):
+    g = Cleaners()
+    c = g.feature_Statistics(
+        City,
+        concat=True,
+        statistics=["sum", "mean", "kurt"],
+        inplace=True,
+        verbose=True,
+    )
+    assert (g.column_stats.columns  == ["sum", "mean", "kurt"]).all()
+# 42
+def test_imputer_feature_boston():
+    o = Inputers(description_filepath="../../descriptions/pre/inputers/boston.yaml")
+    train = o.transform(dataset="train")
+    imp = Imputers(
+        description_filepath="../../descriptions/pre/cleaners/most_frequent_impute.yaml"
+    )
+    assert imp.transform(train, inplace=True, verbose=True).shape == (506,14)
+
+# 42
+def test_imputer_feature_boston_err():
+    o = Inputers(description_filepath="../../descriptions/pre/inputers/boston.yaml")
+    train = o.transform(dataset="train")
+    train['ggoo'] = np.nan
+    imp = Imputers(
+        description_filepath="../../descriptions/pre/cleaners/most_frequent_impute.yaml"
+    )
+    with pytest.raises(PasoError):
+     assert imp.transform(train, inplace=True, verbose=True).shape == (506,14)

@@ -1,0 +1,14 @@
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True
+kind:
+  cvs:
+    description: 'otto_group dataset'
+    genus: Inputer
+    type: yaml
+    kwargs:
+      target: target
+      directory_path: '/Users/brucecottman/Documents/PROJECTS/paso/data/otto_group/'
+      train: 'train.csv'
+      test: 'xtest.csv'
+      sampleSubmission: 'SampleSubmission.csv'

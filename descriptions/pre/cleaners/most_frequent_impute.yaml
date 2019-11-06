@@ -7,6 +7,6 @@ kind:
   most_frequent:
     description: "most_frequent value of feature is used for all NaN values"
     genus: Imputer                             #[optional]
-    type: all-tpes
-    kwargs:
-      None: None
+    type: all-types
+
+

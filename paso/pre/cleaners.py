@@ -4,7 +4,7 @@
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 
-
+from typing import Dict, List
 import numpy as np
 import pandas as pd
 
@@ -22,9 +22,170 @@ from paso.base import _Check_No_NA_Values, _array_to_string
 from paso.base import _dict_value, _check_non_optional_kw
 from paso.base import DataFrame_to_Xy, Xy_to_DataFrame
 from paso.base import pasoFunction, pasoDecorators, raise_PasoError
-from paso.base import _must_be_list_tuple_int
+from paso.base import _must_be_list_tuple_int, _merge_dicts
 from loguru import logger
 
+
+class Imputers(pasoFunction):
+    """
+          Class to impute NaM from dataset. Encoding and scaling
+          and other data-set preprocessing should not be done here.
+
+          parameters:
+              dataset: (DataFrame) are independent features of X
+
+          keywords:
+              kind: (list)
+                  'missing': clean data substituting np.nan with how/strategy keywords.
+              strategy: (list)
+                  'impute': clean data substituting np.nan with how/strategy keywords.
+              kind: (list)
+                  'mean': clean data substituting np.nan with how/strategy keywords.
+
+          returns:
+                  X: (DataFrame)
+
+          Note:
+              Impute before other cleaning and encoding, These steps all expect
+              that NaNs have been removed. Use method Cleaners.Values_to_nan()
+              beforehand to change ant incatitot values to NaN.
+
+          """
+
+    _imputer_type_supported_ = ("numeric", "all")
+    _imputer_simple_stategies_ = {
+        "median": "median",
+        "mean": "mean",
+        "most_frequent": "most_frequent",
+        "random": "random",
+    }
+
+    _imputer_advanced_stategies_ = {"knn": "knn", "mice": "mice"}
+
+    _imputers_ = _merge_dicts(_imputer_advanced_stategies_, _imputer_simple_stategies_)
+
+    @pasoDecorators.InitWrap()
+    def __init__(self, **kwargs) -> None:
+        """
+        Parameters:
+            description_file:
+
+        Returns: instance of claa imputer
+
+        """
+
+        super().__init__()
+
+    @staticmethod
+    def imputers() -> List[str]:
+        """
+        Parameters:
+            None
+
+        Returns:
+            List of available class inputers names.
+        """
+        return [k for k in Imputers._imputers_.keys()]
+
+    @pasoDecorators.TTWrap(array=False, _Check_No_NAs=False)
+    def transform(
+        self,
+        X: pd.DataFrame,
+        verbose: bool = True,
+        inplace: bool = True,
+        features: List[str] = None,
+        **kwargs
+    ) -> pd.DataFrame:
+        """
+        method to transform dataset by imputing NaN values. Encoding and scaling
+        and other data-set preprocessing should not be done here.
+
+        parameters:
+            X: (DataFrame) are independent features of dataset
+
+        keywords:
+            features: (list)
+
+
+        returns:
+                dataset: (DataFrame)
+        """
+
+        # todo pull datatypes automatically, just numericall and all??
+        # todo support other data types besides i.e. most_frequent can support
+        # cat/object/string if na
+        # todo incorporate this A Comparison of Six Methods for Missing Data Imputation
+        # https://www.omicsonline.org/open-access/a-comparison-of-six-methods-for-missing-data-imputation-2155-6180-1000224.pdf
+        # https://impyute.readthedocs.io/en/master/index.html
+        # todo checking passed arguments types are correct
+        # enforce order of method calls
+
+        # currently support only one learner, very brittle parser
+        if self.kind == {}:
+            raise_PasoError(
+                "keyword kind must be present at top level:{}:".format(
+                    self.ontology_kwargs
+                )
+            )
+
+        if self.kind_name not in Imputers._imputers_:
+            raise_PasoError(
+                "no operation named: {} in imputers;: {}".format(
+                    self.kind_name, Imputers._imputers_.keys()
+                )
+            )
+
+        if inplace:
+            y = X
+        else:
+            y = X.copy()
+
+        if features == None:
+            features = y.columns
+            logger.warning(
+                "\nKeyword arg:features: not passed. All features of dataset will be checked for imputation\n{}".format(
+                    features
+                )
+            )
+        else:
+            pass
+
+        ## some of features not in columns
+        if not len(set(features).difference(set(self.Xcolumns))) == 0:
+            raise_PasoError(
+                "\nfeature given {} not in \ndataset columns:{}".format(
+                    features, y.columns
+                )
+            )
+
+        self.imputer_name = self.kind_name
+
+        # check each attirbute for all nand
+        for feature in features:
+            if y[feature].nunique() <= 1:
+                raise_PasoError(
+                    "Impute.transform: 1 or less unique values: {}.\n Remove this feature before calling Impute.".format(
+                        y[feature].unique()
+                    )
+                )
+
+        if self.kind_name in Imputers._imputer_simple_stategies_:
+            # assume target does not have missung values
+            # todo handling target rows with missing values
+            #  with simple row elimination? The idea being you should not try to predict missing values?
+            imputer = SimpleImputer(strategy=self.kind_name)
+            imputer.fit(y[features])
+            y[features] = imputer.transform(y[features])
+        elif self.kind_name in Imputers._imputer_advanced_stategies_:
+            self.imputer = Imputers._imputer_advanced_stategies_[self.imputer_name](
+                **self.kind_name_kwargs
+            )
+
+            self.imputer.fit(X, y)
+            self.imputer_type = self.type
+            y[features] = self.imputer.transform(y[features])
+
+        return y
 
 
 class Cleaners(pasoFunction):
@@ -50,7 +211,7 @@ class Cleaners(pasoFunction):
     ]
 
     @pasoDecorators.InitWrap()
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """
 
         """
@@ -65,7 +226,13 @@ class Cleaners(pasoFunction):
         self.transformed_Feature_Feature_Correlation = False
 
     ####### 1
-    def transform_Values_to_nan(self, X, values=[], inplace=True, verbose=True):
+    def values_to_nan(
+        self,
+        X: pd.DataFrame,
+        values: List[str] = [],
+        inplace: bool = True,
+        verbose: bool = True,
+    ) -> pd.DataFrame:
         """
         Different values can indicate, a value is missing. For example,
         - ``999`` could mean "did not answer" in some features.
@@ -86,7 +253,7 @@ class Cleaners(pasoFunction):
         Returns: DataFrame
 
         """
-
+        # todo implement c.column_missing_value_ratio
         self.values = _must_be_list_tuple_int(values)
         if self.values == []:
             return X
@@ -94,7 +261,7 @@ class Cleaners(pasoFunction):
         y = X.replace(to_replace=values, value=np.nan, inplace=inplace)
 
         if verbose:
-            logger.info("transform_Values_to_nan {}".format(str(self.values)))
+            logger.info("Values_to_nan {}".format(str(self.values)))
 
         self.transformed_Values_to_nan = True
 
@@ -104,9 +271,13 @@ class Cleaners(pasoFunction):
             return y
 
     ######### 2
-    def transform_Delete_NA_Features(
-        self, X, threshold=1.0, inplace=True, verbose=True
-    ):
+    def delete_NA_Features(
+        self,
+        X: pd.DataFrame,
+        threshold: float = 1.0,
+        inplace: bool = True,
+        verbose: bool = True,
+    ) -> pd.DataFrame:
         """
             Having a sufficiently large ratio of missing values for
             a feature renders it statistically irrelevant, you can
@@ -145,9 +316,7 @@ class Cleaners(pasoFunction):
 
         if verbose:
             logger.info(
-                "transform_Delete_NA_Features: {}".format(
-                    self.features_above_threshold_nan
-                )
+                "Delete_NA_Features: {}".format(self.features_above_threshold_nan)
             )
 
         self.transformed_Delete_NA_Features = True
@@ -158,11 +327,13 @@ class Cleaners(pasoFunction):
             return y
 
     ########## 3
-    def transform_Calculate_NA_ratio(self, X, inplace=True, verbose=True):
+    def calculate_NaN_ratio(
+        self, X: pd.DataFrame, inplace: bool = True, verbose: bool = True
+    ) -> pd.DataFrame:
         """
         For a row with a large ratio of missing values (an observation)
         renders it statistically irrelevant. However, the row is not removed.
-        instead the nulls/total_feature_count is caluated for each row and
+        instead the nulls/total_feature_count is calculated for each row and
         a new feature  ``NA_ratio``is added to the returned **pandas** dataframe.
 
         Note:
@@ -182,25 +353,32 @@ class Cleaners(pasoFunction):
                 self.rows_mvr: features removed
 
         """
-        total_feature_count = X.shape[0]
+        total_row_count = X.shape[0]
+        total_feature_count = X.shape[1]
 
         if verbose:
-            logger.info("transform_Calculate_NA_ratio")
+            logger.info("Calculate_NA_ratio")
 
         self.transformed_Calculate_NA_ratio = True
 
+        self.column_missing_value_ratio = 1 - X.count(axis=0) / total_row_count
+
         if inplace:
-            X["NA_ratio"] = X.isnull().sum(axis=1) / total_feature_count
+            X["NaN_ratio"] = 1 - X.count(axis=1) / total_feature_count
             return X
         else:
             y = copy.deepcopy(X)
-            y["NA_ratio"] = X.isnull().sum(axis=1) / total_feature_count
+            y["NaN_ratio"] = X.isnull().sum(axis=1) / total_feature_count
             return y
 
     ########## 4
-    def transform_delete_Duplicate_Features(
-        self, X, ignore=[], inplace=True, verbose=True
-    ):
+    def delete_Duplicate_Features(
+        self,
+        X: pd.DataFrame,
+        ignore: List[str] = [],
+        inplace: bool = True,
+        verbose: bool = True,
+    ) -> pd.DataFrame:
         """
         If a feature has the same values by index as another feature
         then one of those features should be deleted. The duplicate
@@ -217,6 +395,8 @@ class Cleaners(pasoFunction):
                 Usually this keywod argument is used for the target feature
                 that is maybe present in the training dataset.
 
+            ignore_NaN: bool
+
             verbose: bool
 
             inplace : bool, default True
@@ -232,6 +412,7 @@ class Cleaners(pasoFunction):
 
         """
         _Check_No_NA_Values(X)
+
         self.ignore = ignore
 
         equal = {}
@@ -252,7 +433,7 @@ class Cleaners(pasoFunction):
             if verbose:
                 logger.info("Duplicate_Features_Removed: {}".format(str(drop_list)))
 
-        self.transform_delete_Duplicate_Features = True
+        self.transformed_delete_Duplicate_Features = True
 
         if inplace:
             return X
@@ -260,9 +441,14 @@ class Cleaners(pasoFunction):
             return y
 
     ########## 5
-    def transform_Features_with_Single_Unique_Value(
-        self, X, ignore=[], inplace=True, verbose=True
-    ):
+    def delete_Features_with_Single_Unique_Value(
+        self,
+        X: pd.DataFrame,
+        ignore: List[str] = [],
+        inplace: bool = True,
+        verbose: bool = True,
+    ) -> pd.DataFrame:
+
         """
         This method finds all the features which have only one unique value.
         The variation between values is zero. All these features are removed from
@@ -317,14 +503,84 @@ class Cleaners(pasoFunction):
         else:
             return y
 
+    # 5nb.
+    def delete_Features_with_All_Unique_Values(
+        self,
+        X: pd.DataFrame,
+        ignore: List[str] = [],
+        inplace: bool = True,
+        verbose: bool = True,
+    ) -> pd.DataFrame:
+
+        """
+        This method finds all the features which have only number of unique values equal value count.
+        The variation between values is zero. All these features are removed from
+        the dataframe as they have no predictive ability.
+
+        Parameters:
+            Xarg: (DataFrame)
+            ignore: (list) default []
+                The features (column names) not to eliminate.
+                Usually this keywod argument is used for the target feature
+                that is maybe present in the training dataset.
+
+            inplace : bool, default True
+                If True, do operation inplace and return None.
+
+            verbose: bool
+
+        Returns:
+            X: X: (DataFrame)
+                transformed X DataFrame
+
+        Raises:
+
+        Note: All NaN imputed or removed.
+        """
+
+        _Check_No_NA_Values(X)
+
+        efs = []
+        n = 0
+        for f in X.columns:
+            if f in ignore:
+                pass
+            # weirdness where df has
+            # 2 or more features with same name
+            #               len(df[f].squeeze().shape) == 1) and
+            elif X[f].nunique() == X[f].count():
+                efs.append(f)
+                n += 1
+        if n > 0:
+            if verbose:
+                logger.info(
+                    "delete_Features_with_All_Unique_Values {}".format(str(efs))
+                )
+            for f in efs:
+                y = X.drop(f, inplace=inplace, axis=1)
+
+        self.transformed_Features_with_Single_Unique_Value = True
+
+        if inplace:
+            return X
+        else:
+            return y
+
     ########## 6.a
-    def statistics(selfself):
-        return Cleaners._statistics
+    @staticmethod
+    def statistics() -> List[str]:
+        return [k for k in Cleaners._statistics]
 
     ############ 6.b
-    def transform_Features_Statistics(
-        self, X, statistics="all", concat=True, inplace=False, verbose=True
-    ):
+    def feature_Statistics(
+        self,
+        X: pd.DataFrame,
+        statistics: str = "all",
+        concat: bool = True,
+        inplace: bool = True,
+        verbose: bool = True,
+    ) -> pd.DataFrame:
+        # todo row statistics
         """
         Calculate the statistics of each feature and returns a dataframe
         where each row is that statistic.
@@ -345,7 +601,6 @@ class Cleaners(pasoFunction):
                 if concat is True, a new dataFrame is returned
 
             inplace : bool,
-                ignore,
 
             verbose: bool
 
@@ -365,50 +620,55 @@ class Cleaners(pasoFunction):
 
         """
         # work around automated review complaint
-        if not inplace:
-            inplace = True
         if inplace:
-            pass
+            y = X
+        else:
+            y = X.copy()
 
         _Check_No_NA_Values(X)
 
         _must_be_list_tuple_int(statistics)
-        if "all" == statistics or ["all"] == statistics:
+        if "all" in statistics:
             statistics = Cleaners._statistics[:-1]
-        else:  # better be a list
-            for stat in statistics:
-                if stat in Cleaners._statistics[:-1]:
-                    pass
-                else:
-                    raise_PasoError(
-                        "\n One of {}\n is unknown statistic from the list of accepted statistics\n{}".format(
-                            statistics, Cleaners._statistics[:-1]
-                        )
-                    )
-
-        y = pd.DataFrame()
+        tmp_statistics = []
         for stat in statistics:
-            m = (
-                pd.DataFrame(eval("X." + stat + "(axis=0)"))
-                .reset_index(level=0, inplace=False)
-                .T
-            )
-            m.columns = m.iloc[0]
-            m = m[1:]
-            y = pd.concat([y, m])
+            if stat in Cleaners._statistics[:-1]:
+                tmp_statistics.append(stat)
+            else:
+                raise_PasoError(
+                    "\n One of {}\n is unknown statistic from the list of accepted statistics\n{}".format(
+                        statistics, Cleaners._statistics[:-1]
+                    )
+                )
+        statistics = tmp_statistics
+        # by column stats
+        self.column_stats = pd.DataFrame()
+        for stat in statistics:
+            m = eval("X." + stat + "(axis=0)")
+            self.column_stats = pd.concat([self.column_stats, m], axis=1)
+        self.column_stats.columns = statistics
 
-        if concat:
-            y = pd.concat([X, y])
+        # by row stats
+        s = pd.DataFrame()
+        for stat in statistics:
+            m = pd.DataFrame(eval("X." + stat + "(axis=1)"), columns=[stat])
+            s = pd.concat([s, m], axis=1)
 
         if verbose:
-            logger.info("transform_Features_Statistics {}".format(statistics))
+            logger.info("Features_Statistics {}".format(statistics))
 
         self.transformed_Features_Statistics = True
 
-        return y
+        if concat:
+            y = pd.concat([y, s], axis=1)
+            return y
+        else:
+            return s
 
-#7
-    def transform_booleans(self, X, inplace=True, verbose=True):
+    # 7
+    def boolean_to_integer(
+        self, X: pd.DataFrame, inplace: bool = True, verbose: bool = True
+    ) -> pd.DataFrame:
         """
         transform spurious bool  features and values from dataset. Encoding and scaling
         and other data-set preprocessing should not be done here.
@@ -434,31 +694,23 @@ class Cleaners(pasoFunction):
             inplace = True
 
         # change boolean from whatever to 0,1
-        bools = list(X.select_dtypes(include=["bool"]).columns)
+        bools = [f for f in X.columns if X[f].nunique() == 2]
         for feature in bools:
-            # assume ninuue = 1 removed
-            #           if len(X[feature].unique()) == 2:
-            self.boolean_values = list(X[feature].unique())
-            X[feature].replace(to_replace=False, value=0, inplace=inplace)
-            X[feature].replace(to_replace=True, value=1, inplace=inplace)
+            boolean_values = list(X[feature].unique())
+            X[feature].replace(to_replace=boolean_values[0], value=0, inplace=inplace)
+            X[feature].replace(to_replace=boolean_values[1], value=1, inplace=inplace)
 
         self.transformed_booleans = True
 
         if verbose:
-            logger.info("\ntransform_Booleans: {}".format(bools))
+            logger.info("\nboolean_to_integer features: {}".format(bools))
 
         return X
 
     ########## 8
-    def transform_Feature_Feature_Correlation(
-        self,
-        X,
-        kind="numeric",
-        method="pearson",
-        threshold=0.0,
-        inplace=False,
-        verbose=True,
-    ):
+    def feature_Feature_Correlation(
+        self, X: pd.DataFrame, method: str = "pearson", verbose: bool = True
+    ) -> pd.DataFrame:
         """
         If any given Feature has an absolute high correlation coefficient
         with another feature (open interval -1.0,1.0) then is very likely
@@ -503,12 +755,6 @@ class Cleaners(pasoFunction):
                 spearman : Spearman rank correlation
                 callable: callable with input two 1d ndarrays
 
-            threshold :   (float)
-                keep If abs(value > threshold
-
-            inplace : bool, default False
-                Ignored
-
             verbose: bool
 
         Returns:
@@ -519,19 +765,21 @@ class Cleaners(pasoFunction):
         Note: All NaN imputed or removed.
 
         """
-        self.threshold = threshold
         self.corr_method = method
         if verbose:
             logger.info("Correlation method: {}", self.corr_method)
-        if verbose:
-            logger.info("Correlation threshold: {}", self.threshold)
         corr = X.corr(method=self.corr_method)
-        for f in corr.columns:
-            corr.loc[((corr[f] < self.threshold) & (corr[f] > -self.threshold)), f] = 0
         self.transformed_Feature_Feature_Correlation = True
         return corr
 
-    def plot_corr(self, X, kind="numeric", mirror=False, xsize=10, ysize=10):
+    def plot_corr(
+        self,
+        X: pd.DataFrame,
+        kind: str = "numeric",
+        mirror: bool = False,
+        xsize: float = 10,
+        ysize: float = 10,
+    ) -> None:
         """"
         Plot of correlation matrix.
 
@@ -550,6 +798,7 @@ class Cleaners(pasoFunction):
         Note: All NaN imputed or removed.
 
         """
+
         # todo put in EDA module
 
         def plot_corr_numeric(corr):
@@ -735,7 +984,7 @@ class Cleaners(pasoFunction):
 
         _Check_No_NA_Values(X)
         corr = X.corr()
-        _,_ = plt.subplots(figsize=(xsize, ysize))
+        _, _ = plt.subplots(figsize=(xsize, ysize))
         _ = sns.diverging_palette(220, 10, as_cmap=True)
         if kind == "numeric":
             plot_corr_numeric(corr)
@@ -747,7 +996,13 @@ class Cleaners(pasoFunction):
         plt.show()
 
     ########## 8
-    def transform_delete_Features(self, X, features=[], verbose=True, inplace=True):
+    def delete_Features(
+        self,
+        X: pd.DataFrame,
+        features: List[str] = [],
+        verbose: bool = True,
+        inplace: bool = True,
+    ) -> pd.DataFrame:
         """
 
         This class finds all the features which have only one unique value.
@@ -776,7 +1031,7 @@ class Cleaners(pasoFunction):
         y = X.drop(self.delete_features, axis=1, inplace=inplace)
 
         if verbose:
-            logger.info("transform_delete_Features {}".format(self.delete_features))
+            logger.info("delete_Features {}".format(self.delete_features))
 
         self.transformed = True
 
@@ -786,8 +1041,15 @@ class Cleaners(pasoFunction):
             return y
 
     ########## 9
-    def transform_delete_Features_not_in_train_or_test(
-        self, train, test, ignore=[], verbose=True, inplace=True):
+    def delete_Features_not_in_train_or_test(
+        self,
+        train: pd.DataFrame,
+        test: pd.DataFrame,
+        ignore: List[str] = [],
+        verbose: bool = True,
+        inplace: bool = True,
+    ) -> pd.DataFrame:
+
         """
         If the train or test datasets have features the other
         does not, then those features will have no predictive
@@ -875,127 +1137,6 @@ class Cleaners(pasoFunction):
             return X, y
 
 
-class Imputers(pasoFunction):
-    """
-          Class to impute NaM from dataset. Encoding and scaling
-          and other data-set preprocessing should not be done here.
-
-          parameters:
-              dataset: (DataFrame) are independent features of X
-
-          keywords:
-              kind: (list)
-                  'missing': clean data substituting np.nan with how/strategy keywords.
-              strategy: (list)
-                  'impute': clean data substituting np.nan with how/strategy keywords.
-              kind: (list)
-                  'mean': clean data substituting np.nan with how/strategy keywords.
-
-          returns:
-                  X: (DataFrame)
-
-          Note:
-              Impute before other cleaning and encoding, These steps all expect
-              that NaNs have been removed. Use method Cleaners.transform_Values_to_nan()
-              beforehand to change ant incatitot values to NaN.
-
-          """
-
-    _imputer_type_supported_ = ("numeric", "all")
-    _SimpleImputer_stategies_ = {
-        "median": "median",
-        "mean": "mean",
-        "most_frequent": "most_frequent",
-        "random": "random",
-    }
-
-    _AdvancedImputer_stategies_ = {"knn": "knn", "mice": "mice"}
-
-    @pasoDecorators.InitWrap()
-    def __init__(self, **kwargs):
-        """
-        Parameters:
-            description_file:
-
-        Returns: instance of claa imputer
-
-        """
-
-        super().__init__()
-
-    def imputers(self):
-        """
-        Parameters:
-            None
-
-        Returns:
-            List of available class inputers ames.
-        """
-        return [k for k in Imputers.__imputers__.keys()]
-
-    @pasoDecorators.TTWrap(array=False, _Check_No_NAs=False)
-    def transform(self, X, verbose=True, inplace=True, features=None, **kwargs):
-        """
-        method to transform bu imputing NaN values. Encoding and scaling
-        and other data-set preprocessing should not be done here.
-
-        parameters:
-            X: (DataFrame) are independent features of dataset
-
-        keywords:
-            kind: (list)
-                'missing': clean data substituting np.nan with how/strategy keywords.
-            strategy: (list)
-                'impute': clean data substituting np.nan with how/strategy keywords.
-            kind: (list)
-                'mean': clean data substituting np.nan with how/strategy keywords.
-
-        returns:
-                dataset: (DataFrame)
-        """
-
-        # todo pull datatypes automatically, just numericall and all??
-        # todo support other data types besides i.e. most_frequent can support
-        # cat/object/string if na
-        # todo incorporate this A Comparison of Six Methods for Missing Data Imputation
-        # https://www.omicsonline.org/open-access/a-comparison-of-six-methods-for-missing-data-imputation-2155-6180-1000224.pdf
-        # https://impyute.readthedocs.io/en/master/index.html
-        # todo checking passed arguments types are correct
-        # enforce order of method calls
-
-        if inplace:
-            y = X
-        else:
-            y = X.copy()
-
-        if features != None:
-            pass
-        else:
-            raise_PasoError("The feature list to impute must be given")
-
-        ## some of features nt in columns
-        if not len(set(features).difference(set(self.Xcolumns))) == 0:
-            raise_PasoError(
-                "\nfeature given {} not in \ndataset columns:{}".format(
-                    features, columns
-                )
-            )
-
-        if self.kind_name in Imputers._SimpleImputer_stategies_:
-            # assume target does not have missung values
-            # todo handling target rows with missing values
-            #  with simple row elimination? The idea being you should not try to predict missing values?
-            imputer = SimpleImputer(strategy=self.kind_name)
-            imputer.fit(y[features])
-            y[features] = imputer.transform(y[features])
-        elif self.kind_name in Imputers._AdvancedImputer_stategies_:
-            raise NotImplementedError()
-        else:
-            raise_PasoError("Impute Strategy not found: {}".format(self.kind_name))
-
-        return y
-
-
 class Balancers(pasoFunction):
     """
     Currently, **paso** supports only the imbalanced-learn
@@ -1048,7 +1189,8 @@ class Balancers(pasoFunction):
 
         super().__init__()
 
-    def balancers(self):
+    @staticmethod
+    def balancers():
         """
         Parameters:
             None

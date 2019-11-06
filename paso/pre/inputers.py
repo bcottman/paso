@@ -209,7 +209,7 @@ class Inputers(pasoFunction):
         "image3D": _inputer_image3d,
     }
 
-    _datasets_avaialable_ = [
+    _datasets_available_ = [
         "train",
         "valid",
         "test",
@@ -231,6 +231,7 @@ class Inputers(pasoFunction):
         super().__init__()
         self.input_data_set = False
 
+    @staticmethod
     def inputers(self):
         """
         Parameters:
@@ -241,6 +242,7 @@ class Inputers(pasoFunction):
         """
         return [k for k in Inputers._inputer_.keys()]
 
+    @staticmethod
     def formats(self):
         """
         Parameters:
@@ -251,6 +253,7 @@ class Inputers(pasoFunction):
         """
         return [k for k in Inputers._formats_.keys()]
 
+    @staticmethod
     def datasets(self):
         """
         List type of files available
@@ -260,8 +263,7 @@ class Inputers(pasoFunction):
         Returns: lists of datasets
 
         """
-        return Inputers._datasets_avaialable_
-
+        return Inputers._datasets_available_
 
     @pasoDecorators.TTWrapNoArg(array=False)
     def transform(self, *args, **kwargs):
@@ -313,7 +315,6 @@ class Inputers(pasoFunction):
             return Inputers._inputer_[self.kind_name](self, **self.kind_name_kwargs)
 
 
-
 ### Splitters
 class Splitters(pasoFunction):
     """
@@ -340,7 +341,6 @@ class Splitters(pasoFunction):
         super().__init__()
         self.inplace = False
         return self
-
 
     @pasoDecorators.TTWrapXy(array=False)
     def transform(self, X, y, **kwargs):
