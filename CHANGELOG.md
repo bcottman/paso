@@ -19,7 +19,6 @@
 - added to test_learners.py
 - refactored encoders..py
 - added to test_encoders.py
-
 - finished lesson-3.ipynb
 
 ## 0.4.2
@@ -51,7 +50,6 @@
 - added Plotter class
 - added Balancer class
 - added Augmenter class
-
 
 ## 0.4.0
 

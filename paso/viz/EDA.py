@@ -255,3 +255,88 @@ class Feature_to_targets_scatterplots(object):
             plt.show();
 
             return self
+
+
+def plot_confusion_matrix(self, cm, normalize=False):
+    # Plot non-normalized confusion matrix
+    if normalize:
+        title = (
+                "Confusion matrix, with normalization"
+                + self.model_name
+                + "  "
+                + self.model_type
+        )
+    else:
+        title = "Confusion matrix " + self.model_name + "  " + self.model_type
+
+    self._plot_confusion_matrix(
+        cm, self.class_names, normalize=normalize, title=title
+    )
+
+    plt.show()
+
+
+def _plot_confusion_matrix(
+        self, cm, class_names, normalize=False, title=None, cmap=plt.cm.Blues
+):
+    """
+    This function gprahically plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if not title:
+        if normalize:
+            title = "Normalized confusion matrix"
+        else:
+            title = "Confusion matrix, without normalization"
+
+    # Compute confusion matrix
+    # Only use the labels that appear in the data
+
+    if normalize:
+        cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
+        if self.verbose:
+            logger.info("Normalized confusion matrix")
+    else:
+        if self.verbose:
+            logger.info("Confusion matrix, without normalization")
+
+    fig, ax = plt.subplots()
+
+    #        rcParams["figure.figsize"] = (self.x_size, self.y_size)
+    rcParams["figure.figsize"] = (6.0, 6.0)
+    #        np.set_printoptions(precision=self.precision)
+    np.set_printoptions(precision=3)
+
+    im = ax.imshow(cm, interpolation="nearest", cmap=cmap)
+    ax.figure.colorbar(im, ax=ax)
+    # We want to show all ticks...
+    ax.set(
+        xticks=np.arange(cm.shape[1]),
+        yticks=np.arange(cm.shape[0]),
+        # ... and label them with the respective list entries
+        xticklabels=class_names,
+        yticklabels=class_names,
+        title=title,
+        ylabel="True label",
+        xlabel="Predicted label",
+    )
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+    # Loop over data dimensions and create text annotations.
+    fmt = ".3f" if normalize else "d"
+    thresh = cm.max() / 2.0
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(
+                j,
+                i,
+                format(cm[i, j], fmt),
+                ha="center",
+                va="center",
+                color="white" if cm[i, j] > thresh else "black",
+            )
+    fig.tight_layout()
+    return ax
+

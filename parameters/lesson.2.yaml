@@ -2,8 +2,6 @@
 model-methods: []
 function-methods: [log,parameters,transform,traun,predict,read,write,load,save]
 
-project: HPKinetics/paso #[optional]
-
 name: lesson.2
 
 # Executioon
@@ -11,8 +9,6 @@ cpu_n: 12
 threads_n: 24
 gpu_n: 2
 
-cv_n: 5
-shuffle: 1
 
 
 

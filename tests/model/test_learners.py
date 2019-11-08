@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
-__coverage__ = 0.69
+__coverage__ = 0.85
 
 from pathlib import Path
 import pytest
@@ -33,7 +33,7 @@ def test_sklearn_parm_global():
 
 
 # 3
-def test_learn_train_ontological_file_not_exist(flower):
+def test_learn_train_description_file_not_exist(flower):
     o = Learners(description_filepath="../../descriptions/learners/RandomForest.yaml")
     with pytest.raises(PasoError):
         o.train(flower) == o
@@ -52,7 +52,7 @@ def test_learn_train_bad_arg():
         o.train(X, o) == o
 
 
-#
+# 5
 def test_learn_train_no_y():
     inputer = Inputers(
         description_filepath="../../descriptions/pre/inputers/pima-diabetes.yaml"
@@ -164,7 +164,7 @@ def test_learn_train_predict_prob_LGBC():
     assert learner.predict(X).shape == (61878,)
 
 
-# 13
+# 28
 def test_learn_train_predict_Prob_XGBC():
     inputer = Inputers(
         description_filepath="../../descriptions/pre/inputers/pima-diabetes.yaml"
@@ -190,7 +190,7 @@ def test_train_predict_prob_LGBC():
     assert learner.predict_proba(X).shape == (768, 2)
 
 
-# 14b
+# 27
 def test_train_predict_prob_XGBC_creditdard():
     inputer = Inputers(
         description_filepath="../../descriptions/pre/inputers/creditcard.yaml"
@@ -203,7 +203,7 @@ def test_train_predict_prob_XGBC_creditdard():
     assert learner.predict_proba(X).shape == (284807, 2)
 
 
-# 14c
+# 26
 def test_train_predict_prob_XGBC_yeast3():
     inputer = Inputers(
         description_filepath="../../descriptions/pre/inputers/yeast3.yaml"
@@ -216,7 +216,7 @@ def test_train_predict_prob_XGBC_yeast3():
     assert learner.predict_proba(X).shape == (1484, 2)
 
 
-# 14d
+# 25
 def test_train_predict_prob_LGBC_wine():
     inputer = Inputers(description_filepath="../../descriptions/pre/inputers/wine.yaml")
     wine = inputer.transform()
@@ -227,7 +227,7 @@ def test_train_predict_prob_LGBC_wine():
     assert learner.predict_proba(X).shape == (178, 3)
 
 
-# 15
+# 24
 def test_predict_LGBC_no_fit():
     inputer = Inputers(
         description_filepath="../../descriptions/pre/inputers/pima-diabetes.yaml"
@@ -270,8 +270,7 @@ def test_evaluate_pima():
     learner = Learners(description_filepath="../../descriptions/learners/LGBC.yaml")
     learner.train(X, y, checkpoint="pima_LGBMC.ckp")
 
-    assert len(learner.evaluate(X, y).keys()) == 7
-
+    assert len(learner.evaluate(X, y).keys()) == 9
 
 # 17
 def test_evaluate_otto_group():
@@ -283,7 +282,6 @@ def test_evaluate_otto_group():
     X = dataset[dataset.columns.difference([inputer.target])]
     learner = Learners(description_filepath="../../descriptions/learners/XGBC.yaml")
     learner.train(X, y, checkpoint="pima_LGBMC.ckp")
-
     assert len(learner.evaluate(X, y).keys()) == 7
 
 
@@ -300,13 +298,13 @@ def test_learner_cross_validate_LGBC():
     learner.cross_validate(
         X,
         y,
-        description_filepath="../../descriptions/learners/Cross_validation_classification.yaml",
+        cv_description_filepath="../../descriptions/learners/Cross_validation_classification.yaml",
     )
+    assert len(learner.evaluate(X, y).keys()) == 9
 
-    assert len(learner.evaluate(X, y).keys()) == 8
 
 # 19
-def test_learner_cross_validate_RFC_iris_milticlaas():
+def test_learner_cross_validate_RFC_iris_multiclaas():
     inputer = Inputers(description_filepath="../../descriptions/pre/inputers/iris.yaml")
     dataset = inputer.transform()
     y = dataset[inputer.target].values
@@ -316,14 +314,14 @@ def test_learner_cross_validate_RFC_iris_milticlaas():
     learner.cross_validate(
         X,
         y,
-        description_filepath="../../descriptions/learners/Cross_validation_classification.yaml",
+        cv_description_filepath="../../descriptions/learners/Cross_validation_classification.yaml",
     )
 
     assert learner.cv == 5
 
 
 # 20
-def test_learner_cross_validate_RFC_iris_milticlass_evaluate_AO():
+def test_learner_cross_validate_RFC_iris_multiclass_evaluate_AO():
     inputer = Inputers(description_filepath="../../descriptions/pre/inputers/iris.yaml")
     dataset = inputer.transform()
     y = dataset[inputer.target].values
@@ -333,10 +331,10 @@ def test_learner_cross_validate_RFC_iris_milticlass_evaluate_AO():
     learner.cross_validate(
         X,
         y,
-        description_filepath="../../descriptions/learners/Cross_validation_classification.yaml",
+        cv_description_filepath="../../descriptions/learners/Cross_validation_classification.yaml",
     )
 
-    assert learner.evaluate(X, y)["AOC"] == "must be binary class"
+    assert learner.evaluate(X, y)["accuracy"] == 1.0
 
 
 # 21
@@ -350,7 +348,19 @@ def test_learner_cross_validate_RFC_iris_milticlass_evaluate_test_accuracy():
     score = learner.cross_validate(
         X,
         y,
-        description_filepath="../../descriptions/learners/Cross_validation_classification.yaml",
+        cv_description_filepath="../../descriptions/learners/Cross_validation_classification.yaml",
     )
 
     assert score["mean"]["test_accuracy"] >= 0.95
+
+# 22
+
+def test_learners():
+    learner = Learners(description_filepath="../../descriptions/learners/LGBC.yaml")
+    assert len(learner.learners()) == 16
+
+# 23
+
+def test_cross_validaters():
+    learner = Learners(description_filepath="../../descriptions/learners/LGBC.yaml")
+    assert len(learner.cross_validaters()) == 3

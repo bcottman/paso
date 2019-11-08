@@ -3,7 +3,7 @@
 __author__ = "Bruce_H_Cottman"
 __license__ = "MIT License"
 
-__coverage__ = 0.84
+__coverage__ = 0.86
 
 import pandas as pd
 
@@ -43,6 +43,24 @@ def test_inputer_imputer():
         "text",
         "image2D",
         "image3D",
+    ]
+
+
+# 3b
+def test_inputer_formats():
+    inputer = Inputers(description_filepath="../../descriptions/pre/inputers/iris.yaml")
+    assert inputer.formats() == ["csv", "zip", "data", "sklearn.datasets", "yaml"]
+
+
+# 3c
+def test_inputer_datasets():
+    inputer = Inputers(description_filepath="../../descriptions/pre/inputers/iris.yaml")
+    assert inputer.datasets() == [
+        "train",
+        "valid",
+        "test",
+        "sampleSubmission",
+        "directory_path",
     ]
 
 
@@ -100,10 +118,7 @@ def test_inputer_transform_splitter_X_train():
         description_filepath="../../descriptions/pre/inputers/split_30_stratify.yaml"
     )
     train, valid, y_train, y_valid = splitter.transform(X, y)
-    assert (
-      train.shape == (105, 4)
-        and y_train.shape == (105,)
-    )
+    assert train.shape == (105, 4) and y_train.shape == (105,)
 
 
 # 8
@@ -116,11 +131,7 @@ def test_inputer_transform_splitter_X_valid():
         description_filepath="../../descriptions/pre/inputers/split_30_stratify.yaml"
     )
     train, valid, y_train, y_valid = splitter.transform(X, y)
-    assert (
-        valid.shape == (45, 4)
-        and y_valid.shape == (45,)
-    )
-
+    assert valid.shape == (45, 4) and y_valid.shape == (45,)
 
 
 # 9
@@ -171,12 +182,11 @@ def test_spitter_transform_s_wine():
     )
     train, valid, y_train, y_valid = splitter.transform(X, y)
     assert (
-      train.shape == (124, 13)
+        train.shape == (124, 13)
         and valid.shape == (54, 13)
         and y_train.shape == (124,)
         and y_valid.shape == (54,)
     )
-
 
 
 # 15
@@ -229,12 +239,11 @@ def test_spitter_transform_otto_group():
     )
     train, valid, y_train, y_valid = splitter.transform(X, y)
     assert (
-      train.shape == (49502, 94)
+        train.shape == (49502, 94)
         and valid.shape == (12376, 94)
         and y_train.shape == (49502,)
         and y_valid.shape == (12376,)
     )
-
 
 
 # 21
@@ -349,3 +358,26 @@ def test_spltter_transform_creditcard_20__url_cvs_zip():
     )
     train, valid, _, _ = splitter.transform(X, y)
     assert train.shape == (227845, 30) and valid.shape == (56962, 30)
+#31
+def test_inputer_bad_train():  # descriptions
+    inputer = Inputers(
+        description_filepath="../../descriptions/pre/inputers/otto_group_bad.yaml"
+    )
+    with pytest.raises(PValueError):
+        assert (inputer.transform()  == 1)
+
+#32
+def test_inputer_bad_test():  # descriptions
+    inputer = Inputers(
+        description_filepath="../../descriptions/pre/inputers/otto_group_bad2.yaml"
+    )
+    with pytest.raises(PasoError):
+        assert (inputer.transform()  == 1)
+
+#33
+def test_inputer_bad_kind():  # descriptions
+    inputer = Inputers(
+        description_filepath="../../descriptions/pre/inputers/otto_group_bad4.yaml"
+    )
+    with pytest.raises(PasoError):
+        assert (inputer.transform()  == 1)

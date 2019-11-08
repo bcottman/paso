@@ -1,0 +1,22 @@
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True
+kind:
+  exec:
+    description: 'Boston dataset'
+    genus: Inputer
+    type: sklearn.datasets
+    kwargs:
+      target: MEDV
+      pre: ['from sklearn.datasets import load_boston','boston = load_boston()']
+      create-df: 'pd.DataFrame(boston.data,  columns = boston.feature_names )'
+      post: ['result[self.target] = boston.target']
+
+
+
+
+
+
+
+
+

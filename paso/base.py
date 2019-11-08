@@ -9,6 +9,7 @@ __coverage__ = 0.98
 # todo: port to swift
 # not neeed with checkpoints and a notebook for every pipelin
 
+from typing import Dict, List
 from abc import ABC
 from loguru import logger
 import pydot_ng as pydot
@@ -111,6 +112,10 @@ def _stat_arrays_in_dict(d):
     }
 
 
+def _merge_dicts(d1, d2):
+    return {**d2, **d1}
+
+
 def _add_dicts(d1, d2):
     for k in d1.keys():
         if k in d2.keys():
@@ -199,8 +204,6 @@ def _Check_No_NA_Values(df):
     for feature in df.columns:
         if _Check_No_NA_F_Values(df, feature):
             pass
-        else:
-            pass
 
 
 def set_modelDict_value(v, at):
@@ -280,7 +283,7 @@ def _exists_key(dictnary, key, error=True):
     else:
         if error:
             raise_PasoError(
-                "learner:fit/predict:{} not specified through keyword call or description file for: {}".format(
+                "{} not specified through keyword call or description file for: {}".format(
                     attribute, self.name
                 )
             )
@@ -347,11 +350,17 @@ from sklearn.ensemble import BaggingClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from hpsklearn import HyperoptEstimator
 
+
 # sklearn.metrics imports
+from sklearn.metrics import roc_auc_score, hamming_loss
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.metrics import precision_score, log_loss, recall_score
-#from sklearn.metrics import confusion_matrix
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+from sklearn.metrics import explained_variance_score, r2_score
+from sklearn.metrics import brier_score_loss  #, label_ranking_loss
+from sklearn.metrics import median_absolute_error, mean_squared_log_error
+from sklearn.metrics import matthews_corrcoef, confusion_matrix
+
 
 ### NameToClass class
 class NameToClass:
@@ -386,29 +395,151 @@ class NameToClass:
 
     __hyper_parameter_tuners__ = {"Hyperopt": HyperoptEstimator}
 
+    BINARY = "binary"
+    MULTICLASS =  "multiclass"
+    NBINARY = 2
+    NMULTICLASS = 2
+
     __metrics__ = {
-        #   Type            metric_name metric_func kwargs              greater_is_better  needs_proba
+        # Type metric_name
+        #        metric_func
+        #           binary|muli-class
+        #           evaluate_metric_func_kwargs
+        #           needs_proba
+        #           cv metric/scoring tag
+        # sorted(sklearn.metrics.SCORERS.keys())
         "Classification": {
-            "AOC": [roc_auc_score, {"greater_is_better": True, "needs_proba": False}],
+            "AOC": [
+                roc_auc_score,
+                "binary",
+                {},
+                False,
+                # {"greater_is_better": True, "needs_proba": False},
+                'roc_auc',
+            ],
             "accuracy": [
                 accuracy_score,
-                {"greater_is_better": True, "needs_proba": False},
+                "multiclass",
+                {},
+                False,
+                # {"greater_is_better": True, "needs_proba": False},
+                'accuracy',
+            ],
+            "brier_score_loss": [
+                brier_score_loss,
+                "binary",
+                {},
+                False,
+                # {"greater_is_better": False, "needs_proba": True},
+                'brier_score_loss',
+            ],
+            "confusion_matrix": [
+                confusion_matrix,
+                "multiclass",
+                {},
+                False,
+                # {"greater_is_better": True, "needs_proba": False},
+                False,
             ],
             "f1_score": [
                 f1_score,
-                {"greater_is_better": True, "needs_proba": False, "average": "micro"},
+                "multiclass",
+                {"average": "micro"},
+                False,
+                # {"greater_is_better": True, "needs_proba": False},
+                "f1_micro",
+            ],
+            "hamming_loss": [
+                hamming_loss,
+                "multiclass",
+                {},
+                False,
+                #{"greater_is_better": False, "needs_proba": False},
+                False,
             ],
             "precision": [
                 precision_score,
-                {"greater_is_better": True, "needs_proba": False, "average": "micro"},
+                "multiclass",
+                {"average": "micro"},
+                False,
+                # {"greater_is_better": True, "needs_proba": False},
+                'precision_micro',
             ],
             "recall": [
                 recall_score,
-                {"greater_is_better": True, "needs_proba": False, "average": "micro"},
+                "multiclass",
+                {"average": "micro"},
+                False,
+                # {"greater_is_better": True, "needs_proba": False},
+                'recall_micro',
             ],
-            "logloss": [log_loss, {"greater_is_better": False, "needs_proba": True}],
+            "logloss": [
+                log_loss,
+                "multiclass",
+                {},
+                True,
+                # {"greater_is_better": False, "needs_proba": True},
+                'neg_log_loss',
+            ],
         },
-        "Regression": {},
+        "Regression": {
+            "mean_squared_error": [
+                mean_squared_error,
+                None,
+                {},
+                True,
+                # {"greater_is_better": False, "needs_proba": True},
+                'neg_mean_squared_error',
+            ],
+            "mean_absolute_error": [
+                mean_absolute_error,
+                None,
+                {},
+                True,
+                # {"greater_is_better": False, "needs_proba": True},
+                'neg_mean_absolute_error',
+            ],
+            "median_absolute_error": [
+                median_absolute_error,
+                None,
+                {},
+                True,
+                #{"greater_is_better": False, "needs_proba": True},
+                'neg_median_absolute_error',
+            ],
+            "mean_squared_log_error": [
+                mean_squared_log_error,
+                None,
+                {},
+                True,
+                #{"greater_is_better": False, "needs_proba": True},
+                'neg_mean_squared_log_error',
+            ],
+            "matthews_corrcoef": [
+                matthews_corrcoef,
+                "multiclass",
+                {},
+                False,
+                #{"greater_is_better": True, "needs_proba": False},
+                False,
+            ],
+            "explained_variance_score": [
+                explained_variance_score,
+                None,
+                {},
+                True,
+                #{"greater_is_better": True, "needs_proba": True},
+                False,
+            ],
+            "r2_score": [
+                r2_score,
+                None,
+                {},
+                True,
+                #{"greater_is_better": True, "needs_proba": True},
+                'r2',
+            ],
+        },
         "Clustering": {},
         "Dimension_Reduction": {},
     }
@@ -469,17 +600,35 @@ def _kwargs_parse(*args, **kwargs):
     """
     objecty = args[0]
 
-    kwa = "description_filepath"  # set in __init__
-    if _exists_Attribute(objecty, kwa):
-        # not supposed to be in transform kw
+    parameter_file = False
+    kwa = "cv_description_filepath"  # set in __init__
+    objecty.cv_description_filepath = _dict_value(kwargs, kwa, "")
+    # cross-validate method call
+    if objecty.cv_description_filepath != "":
         objecty.description_kwargs = Param(
-            filepath=objecty.description_filepath
+            filepath=objecty.cv_description_filepath
         ).parameters_D
+        parameter_file = True
 
-    # if kwa in kwargs:
-    #     raise_PasoError(
-    #         "description_filepath not given in instance creation. Transform/Train  wrong place."
-    #     )
+    if not parameter_file:
+        kwa = "tune_description_filepath"  # set in __init__
+        objecty.tune_description_filepath = _dict_value(kwargs, kwa, "")
+        # tune method call
+        if objecty.tune_description_filepath != "":
+            objecty.description_kwargs = Param(
+                filepath=objecty.tune_description_filepath
+            ).parameters_D
+            parameter_file = True
+
+    if not parameter_file:
+        kwa = "description_filepath"  # set in __init__
+        if _exists_Attribute(objecty, kwa):
+            # not supposed to be in transform kw
+            objecty.description_kwargs = Param(
+                filepath=objecty.description_filepath
+            ).parameters_D
+        else:
+            logger.warning("description_filepath was not ppcified.")
 
     # if in  description file then keyword will have precedence
     # check keywords in passes argument stream
@@ -512,7 +661,7 @@ def _kwargs_parse(*args, **kwargs):
     # check keywords in passes argument stream
     # non-optional kw are initiated with None
 
-    # currently support only one inputer, very brittle parser
+    # currently support only one , very brittle parser
     if objecty.kind == {}:
         raise_PasoError(
             "keyword kind must be present at top level:{}:\n or indented key-vakuee pairs do not follow kind".format(
@@ -536,11 +685,6 @@ def _kwargs_parse(*args, **kwargs):
                 objecty.kind_name_kwargs,
             )
         )
-
-    # currently just learner/training models, can only be in kwarg in train
-    # kwa = "measure"
-    # objecty.measure = _dict_value2(kwargs, objecty.description_kwargs, kwa, True)
-    # validate_bool_kwarg(objecty.measure, kwa)
 
     # currently just learner/training models, can only be in kwarg in train
     kwa = "target"
@@ -593,7 +737,8 @@ class pasoDecorators:
         def decorator(fun):
             # i suppose i could of done @wraos for self, but this works
             def wrapper(*args, **kwargs):
-                if argyyyy > -1000000: pass  # workaround covage bug
+                if argyyyy > -1000000:
+                    pass  # workaround covage bug
 
                 objecty = args[0]
                 # any class can have keyord verbose = (booean)
@@ -688,8 +833,8 @@ class pasoDecorators:
 
         def decorator(fun):
             def wrapper(*args, **kwargs):
-                if kwarg_description_filepath_parse:
-                    _kwarg_description_filepath_parse(*args, **kwargs)
+                # if kwarg_description_filepath_parse:
+                #     _kwarg_description_filepath_parse(*args, **kwargs)
                 objecty = _kwargs_parse(*args, **kwargs)
                 result = _narg_boiler_plate(
                     objecty, 3, _Check_No_NAs, fun, array, *args, **kwargs
@@ -731,14 +876,14 @@ class pasoDecorators:
                 if len(args) >= 2:
                     Xarg = args[1]
                 if objecty.trained == False:
-                    raise PasoError(
+                    raisePasoErrorPasoError(
                         "Predict:Must call train before predict.", args, kwargs
                     )
                 # must be dataFrame
                 if is_DataFrame(Xarg):
                     pass
                 else:
-                    raise raise_PasoError(
+                    raisePasoErrorraise_PasoError(
                         "PredictWrap:Xarg must be if type DataFrame. Was type:{}".format(
                             type(Xarg)
                         )
