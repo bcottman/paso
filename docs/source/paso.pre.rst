@@ -9,14 +9,6 @@ paso.pre package
 Submodules
 ----------
 
-paso.pre.ContinuoustoCategory module
-------------------------------------
-
-.. automodule:: paso.pre.ContinuoustoCategory
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 paso.pre.cleaners module
 ------------------------
 
@@ -25,10 +17,10 @@ paso.pre.cleaners module
     :undoc-members:
     :show-inheritance:
 
-paso.pre.encoders.spy module
-----------------------------
+paso.pre.encoders module
+------------------------
 
-.. automodule:: paso.pre.encoders.spy
+.. automodule:: paso.pre.encoders
     :members:
     :undoc-members:
     :show-inheritance:
@@ -57,18 +49,18 @@ paso.pre.scalers module
     :undoc-members:
     :show-inheritance:
 
-paso.pre.toCategory module
---------------------------
+paso.pre.tmp module
+-------------------
 
-.. automodule:: paso.pre.toCategory
+.. automodule:: paso.pre.tmp
     :members:
     :undoc-members:
     :show-inheritance:
 
-paso.pre.toDatetimeComponents module
-------------------------------------
+paso.pre.toutil module
+----------------------
 
-.. automodule:: paso.pre.toDatetimeComponents
+.. automodule:: paso.pre.toutil
     :members:
     :undoc-members:
     :show-inheritance:

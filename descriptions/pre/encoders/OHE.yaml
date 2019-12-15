@@ -1,0 +1,25 @@
+## HEADER-PROPERTIES
+project: HPKinetics/paso #[optional]
+verbose: True  #[optional]
+inplace: True #[optional]
+# end of header
+kind:
+  #kind-<name>
+  OneHotEncoder:
+    #kind-<name>-PROPERTIES
+    genus: encoder                                #[optional]
+    type: Categorical
+    description: "Generic RF for classification"  #[optional]
+    kwargs:
+    #kind-<name>-KWARGS
+      return_df: True
+      handle_missing: eturn_nan
+      verbose: 1
+
+
+
+
+
+
+
+

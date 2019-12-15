@@ -363,7 +363,7 @@ def test_inputer_bad_train():  # descriptions
     inputer = Inputers(
         description_filepath="../../descriptions/pre/inputers/otto_group_bad.yaml"
     )
-    with pytest.raises(PValueError):
+    with pytest.raises(PasoError):
         assert (inputer.transform()  == 1)
 
 #32

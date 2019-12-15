@@ -7,10 +7,10 @@ __coverage__ = 0.98
 # todo:  enable checkpoint
 # todo: support RAPID in parm file
 # todo: port to swift
-# not neeed with checkpoints and a notebook for every pipelin
 
-from typing import Dict, List
 from abc import ABC
+from functools import wraps
+from typing import Dict, List
 from loguru import logger
 import pydot_ng as pydot
 from IPython.display import Image, display
@@ -43,22 +43,39 @@ def raise_PasoError(msg):
     raise PasoError(msg)
 
 
-def Xy_to_DataFrame(X, y, target):
+
+####  for interna use
+# todo consider breaking off into util.py
+
+def Xy_to_DataFrame(X: pd.DataFrame, y: np.ndarray, target:str) -> pd.DataFrame:
     """
         Tranform X(DataFrame and y (numpy vector) into one DataFame X
 
         Note: Memory is saved as y added to X dataFrame in place.
 
-    :param X: DataFrame
-    :param y: numpy vector
-    :param target: sring
-    :return: X
+    Parameters:
+
+        X:
+        y:
+        target:
+
+    Return:s
     """
     X[target] = y
-    return None
+    return X
 
 
-def DataFrame_to_Xy(X, target):
+def DataFrame_to_Xy(X: pd.DataFrame, target: str) ->(pd.DataFrame, np.ndarray):
+    """
+
+    Parameters:
+
+        X:
+        target:
+
+    Return:s
+    """
+
     y = X[target].values
     X = X[X.columns.difference([target])]
     return X, y
@@ -78,32 +95,41 @@ def _must_be_list_tuple_int(attribute):
 
 
 @jit
-def _divide_dict(d, n):
+def _divide_dict(d: Dict, n: np.int_) -> Dict:
     return {k: d[k] / n for k in d}
 
 
 # @jit
-def _mean_arrays_in_dict(d):
+def _mean_arrays_in_dict(d: Dict) -> Dict:
     return {k: np.mean(d[k]) for k in d}
 
 
 # @jit
-def _median_arrays_in_dict(d):
+def _median_arrays_in_dict(d: Dict) -> Dict:
     return {k: np.median(d[k]) for k in d}
 
 
 # @jit
-def _std_arrays_in_dict(d):
+def _std_arrays_in_dict(f_ed: Dict) -> Dict:
     return {k: np.std(d[k]) for k in d}
 
 
 # @jit
-def _var_arrays_in_dict(d):
+def _var_arrays_in_dict(d: Dict) -> Dict:
     return {k: np.var(d[k]) for k in d}
 
 
 # @jit
-def _stat_arrays_in_dict(d):
+def _stat_arrays_in_dict(d: Dict) -> Dict:
+    """
+    Determines statistics, mean, median, std, var of an dict of arrays.
+
+    parameters:
+        d: Dict ,where k is str, v is array of values
+
+    :return:
+        d:dict statistics of eah key'array
+    """
     return {
         "mean": _mean_arrays_in_dict(d),
         "median": _median_arrays_in_dict(d),
@@ -112,22 +138,22 @@ def _stat_arrays_in_dict(d):
     }
 
 
-def _merge_dicts(d1, d2):
+def _merge_dicts(d1: Dict, d2: Dict)-> Dict:
     return {**d2, **d1}
 
 
-def _add_dicts(d1, d2):
+def _add_dicts(d1: Dict, d2: Dict) -> Dict:
     for k in d1.keys():
         if k in d2.keys():
             d1[k] = d1[k] + d2[k]
     return {**d2, **d1}
 
 
-def _array_to_string(array):
+def _array_to_string(array: np.ndarray) -> List:
     return [str(item) for item in array]
 
 
-def is_Series(X):
+def isSeries(X) -> bool:
     """
     Parameters:
         X (any type)
@@ -139,7 +165,7 @@ def is_Series(X):
     return isinstance(X, pd.core.series.Series)
 
 
-def is_DataFrame(X):
+def isDataFrame(X) -> bool:
     """
     Parameters:
         X (any type)
@@ -151,7 +177,7 @@ def is_DataFrame(X):
     return isinstance(X, (pd.core.frame.DataFrame, pd.core.series.Series))
 
 
-def _new_feature_names(X, names):
+def _new_feature_names(X: pd.DataFrame, names: List) -> pd.DataFrame:
     """
     Change feature nanmes of a dataframe to names.
 
@@ -175,8 +201,8 @@ def _new_feature_names(X, names):
 
 
 # must be dataFrame or series
-def _Check_is_DataFrame(X):
-    if is_DataFrame(X):
+def _Check_is_DataFrame(X) -> List:
+    if isDataFrame(X):
         return True
     else:
         raise_PasoError(
@@ -186,21 +212,21 @@ def _Check_is_DataFrame(X):
         )
 
 
-def _Check_No_NA_F_Values(df, feature):
+def _Check_No_NA_F_Values(df: pd.DataFrame, feature: str) -> bool:
     if not df[feature].isna().any():
         return True
     else:
         raise_PasoError("Passed dataset, DataFrame, contained NA")
 
 
-def _Check_No_NA_Series_Values(ds):
+def _Check_No_NA_Series_Values(ds: pd.DataFrame):
     if not ds.isna().any():
         return True
     else:
         raise_PasoError("Passed dataset, DataFrame, contained NA")
 
 
-def _Check_No_NA_Values(df):
+def _Check_No_NA_Values(df: pd.DataFrame):
     for feature in df.columns:
         if _Check_No_NA_F_Values(df, feature):
             pass
@@ -210,11 +236,11 @@ def set_modelDict_value(v, at):
     """
     replaced by _dict_value
     """
-    if at not in objecty.modelDict.keys():
-        objecty.modelDict[at] = v
+    if at not in object_.modelDict.keys():
+        object_.modelDict[at] = v
 
 
-def _exists_as_dict_value(dictnary, key):
+def _exists_as_dict_value(dictnary: Dict, key: str) -> Dict:
     """
     used to variable to dict-value or default.
     if key in dict return key-value
@@ -231,7 +257,7 @@ def _exists_as_dict_value(dictnary, key):
         return {}
 
 
-def _dict_value(dictnary, key, default):
+def _dict_value(dictnary: Dict, key: str, default):
     """
     used to variable to dict-value or default.
     if key in dict return key-value
@@ -244,7 +270,7 @@ def _dict_value(dictnary, key, default):
         return default
 
 
-def _dict_value2(dictnary, fdictnary, key, default):
+def _dict_value2(fdictnary: Dict, dictnary: Dict, key:str , default):
     """
     used to variable to dict or fdict (2nd dict) value or default.
     if key in dict or fdict return key-value
@@ -261,7 +287,7 @@ def _dict_value2(dictnary, fdictnary, key, default):
     return result
 
 
-def _check_non_optional_kw(kw, msg):
+def _check_non_optional_kw(kw, msg: str ):
     """
     Raise PasoError and halt if non-optinal keyword not present.
     kw must be in namespace and set to None.
@@ -273,11 +299,11 @@ def _check_non_optional_kw(kw, msg):
         return True
 
 
-def _exists_Attribute(objecty, attribute_string):
-    return hasattr(objecty, attribute_string)
+def _exists_Attribute(object_, attribute_string) -> str:
+    return hasattr(object_, attribute_string)
 
 
-def _exists_key(dictnary, key, error=True):
+def _exists_key(dictnary: Dict, key: str  , error: bool =True):
     if key in dictnary:
         return dictnary[key]
     else:
@@ -296,7 +322,7 @@ def _exists_key(dictnary, key, error=True):
             return False
 
 
-def _kind_name_keys(o, kind_name_keys, verbose=True):
+def _kind_name_keys(o, kind_name_keys: Dict, verbose=True)-> Dict:
     """
         Accomplish parsing of a named class/ genus. kind_name(s) key/value pairs.
         This group is the dict of the ``kind`` key.
@@ -368,7 +394,7 @@ class NameToClass:
         map sklearner name to class stub
     """
 
-    __learners__ = {
+    _learners_ = {
         "LGBMClassifier": LGBMClassifier,
         "SGDClassifier": SGDClassifier,
         "RandomForest": RandomForestClassifier,  # ......estimator
@@ -387,20 +413,20 @@ class NameToClass:
         "XGBRegression": XGBRegressor,
     }
 
-    __cross_validators__ = {
+    _cross_validators_ = {
         "cross_validate": cross_validate,
         "BaggingClassifier": BaggingClassifier,  # ......cross-validators,
         "CalibratedClassifierCV": CalibratedClassifierCV,
     }
 
-    __hyper_parameter_tuners__ = {"Hyperopt": HyperoptEstimator}
+    _hyper_parameter_tuners_ = {"Hyperopt": HyperoptEstimator}
 
     BINARY = "binary"
     MULTICLASS =  "multiclass"
     NBINARY = 2
     NMULTICLASS = 2
 
-    __metrics__ = {
+    _metrics_ = {
         # Type metric_name
         #        metric_func
         #           binary|muli-class
@@ -545,17 +571,17 @@ class NameToClass:
     }
 
 
-def _narg_boiler_plate(objecty, narg, _Check_No_NAs, fun, array, *args, **kwargs):
+def _narg_boiler_plate(object_, narg, _Check_No_NAs, fun, array, *args, **kwargs):
     """ hidden postamble for transform, train wrap"""
     if narg == 1:
-        result = fun(objecty, **kwargs)
+        result = fun(object_, **kwargs)
     elif narg == 2:
-        if objecty.inplace:
+        if object_.inplace:
             X = args[1]
         else:
             X = args[1].copy()
         _Check_is_DataFrame(X)
-        objecty.Xcolumns = X.columns
+        object_.Xcolumns = X.columns
         if _Check_No_NAs:
             _Check_No_NA_Values(X)
 
@@ -563,24 +589,24 @@ def _narg_boiler_plate(objecty, narg, _Check_No_NAs, fun, array, *args, **kwargs
         #     args = []  # klug for AugmentBy_class
         # pre
         if array:
-            result = fun(objecty, X.to_numpy(), **kwargs)
+            result = fun(object_, X.to_numpy(), **kwargs)
         else:
-            result = fun(objecty, X, **kwargs)
+            result = fun(object_, X, **kwargs)
     elif narg == 3:
-        if objecty.inplace:
+        if object_.inplace:
             X = args[1]
             y = args[2]
         else:
             X = args[1].copy()
             y = args[2].copy()
         _Check_is_DataFrame(X)
-        objecty.Xcolumns = X.columns
+        object_.Xcolumns = X.columns
         if _Check_No_NAs:
             _Check_No_NA_Values(X)
         if array:
-            result = fun(objecty, X.to_numpy(), y, **kwargs)
+            result = fun(object_, X.to_numpy(), y, **kwargs)
         else:
-            result = fun(objecty, X, y, **kwargs)
+            result = fun(object_, X, y, **kwargs)
     else:
         raise_PasoError(" _;  X ; X,y only currently supported in TTWrap")
     return result
@@ -598,34 +624,34 @@ def _kwargs_parse(*args, **kwargs):
         kwarg pairs:
             target: (learner only)
     """
-    objecty = args[0]
+    object_ = args[0]
 
     parameter_file = False
-    kwa = "cv_description_filepath"  # set in __init__
-    objecty.cv_description_filepath = _dict_value(kwargs, kwa, "")
+    kwa = "cv_description_filepath"  # set in _init_
+    object_.cv_description_filepath = _dict_value(kwargs, kwa, "")
     # cross-validate method call
-    if objecty.cv_description_filepath != "":
-        objecty.description_kwargs = Param(
-            filepath=objecty.cv_description_filepath
+    if object_.cv_description_filepath != "":
+        object_.description_kwargs = Param(
+            filepath=object_.cv_description_filepath
         ).parameters_D
         parameter_file = True
 
     if not parameter_file:
-        kwa = "tune_description_filepath"  # set in __init__
-        objecty.tune_description_filepath = _dict_value(kwargs, kwa, "")
+        kwa = "tune_description_filepath"  # set in _init_
+        object_.tune_description_filepath = _dict_value(kwargs, kwa, "")
         # tune method call
-        if objecty.tune_description_filepath != "":
-            objecty.description_kwargs = Param(
-                filepath=objecty.tune_description_filepath
+        if object_.tune_description_filepath != "":
+            object_.description_kwargs = Param(
+                filepath=object_.tune_description_filepath
             ).parameters_D
             parameter_file = True
 
     if not parameter_file:
-        kwa = "description_filepath"  # set in __init__
-        if _exists_Attribute(objecty, kwa):
+        kwa = "description_filepath"  # set in _init_
+        if _exists_Attribute(object_, kwa):
             # not supposed to be in transform kw
-            objecty.description_kwargs = Param(
-                filepath=objecty.description_filepath
+            object_.description_kwargs = Param(
+                filepath=object_.description_filepath
             ).parameters_D
         else:
             logger.warning("description_filepath was not ppcified.")
@@ -635,62 +661,67 @@ def _kwargs_parse(*args, **kwargs):
     # non-optional kw default as None
     # head of description file
     kwa = "project"
-    objecty.project = _dict_value2(kwargs, objecty.description_kwargs, kwa, None)
+    object_.project = _dict_value2(kwargs, object_.description_kwargs, kwa, None)
 
     kwa = "inplace"
-    objecty.inplace = _dict_value2(kwargs, objecty.description_kwargs, kwa, True)
-    validate_bool_kwarg(objecty.inplace, kwa)
+    object_.inplace=_dict_value(kwargs, kwa, True)
+    kwa = "verbose"
+    object_.verbose= _dict_value(kwargs, kwa, True)
+
+    kwa = "inplace"
+    object_.inplace = _dict_value2(kwargs, object_.description_kwargs, kwa, True)
+    validate_bool_kwarg(object_.inplace, kwa)
 
     kwa = "verbose"
-    objecty.verbose = _dict_value2(kwargs, objecty.description_kwargs, kwa, True)
-    validate_bool_kwarg(objecty.verbose, kwa)
+    object_.verbose = _dict_value2(kwargs, object_.description_kwargs, kwa, True)
+    validate_bool_kwarg(object_.verbose, kwa)
 
     kwa = "dataset_name"  # opional
-    objecty.verbose = _dict_value2(kwargs, objecty.description_kwargs, kwa, "")
+    object_.verbose = _dict_value2(kwargs, object_.description_kwargs, kwa, "")
 
-    if objecty.verbose:
+    if object_.verbose:
         logger.info(
-            "Loaded description_filepath file:{} ".format(objecty.description_filepath)
+            "Loaded description_filepath file:{} ".format(object_.description_filepath)
         )
 
     kwa = "kind"
-    objecty.kind = _exists_as_dict_value(
-        objecty.description_kwargs, kwa
+    object_.kind = _exists_as_dict_value(
+        object_.description_kwargs, kwa
     )  # ui not- error
 
     # check keywords in passes argument stream
     # non-optional kw are initiated with None
 
     # currently support only one , very brittle parser
-    if objecty.kind == {}:
+    if object_.kind == {}:
         raise_PasoError(
             "keyword kind must be present at top level:{}:\n or indented key-vakuee pairs do not follow kind".format(
-                objecty.description_kwargs
+                object_.description_kwargs
             )
         )
     # currently 1st and only as value as dict
-    objecty.kind_name = list(objecty.kind.keys())[0]
-    objecty.kind_name_keys = _exists_as_dict_value(objecty.kind, objecty.kind_name)
+    object_.kind_name = list(object_.kind.keys())[0]
+    object_.kind_name_keys = _exists_as_dict_value(object_.kind, object_.kind_name)
     # Thus order keyword must be given even if []
-    objecty.kind_name_kwargs = _kind_name_keys(
-        objecty, objecty.kind_name_keys, verbose=objecty.verbose
+    object_.kind_name_kwargs = _kind_name_keys(
+        object_, object_.kind_name_keys, verbose=object_.verbose
     )
-    if objecty.verbose:
+    if object_.verbose:
         logger.info(
             "\n kind-name:{}\n description:{}\n genus: {}\n type: {}\n kwargs: {} \n".format(
-                objecty.kind_name,
-                objecty.description,
-                objecty.genus,
-                objecty.type,
-                objecty.kind_name_kwargs,
+                object_.kind_name,
+                object_.description,
+                object_.genus,
+                object_.type,
+                object_.kind_name_kwargs,
             )
         )
 
     # currently just learner/training models, can only be in kwarg in train
     kwa = "target"
-    objecty.target = _dict_value2(kwargs, objecty.description_kwargs, kwa, None)
+    object_.target = _dict_value2(kwargs, object_.description_kwargs, kwa, None)
 
-    return objecty
+    return object_
 
 
 def _kwarg_description_filepath_parse(*args, **kwargs):
@@ -705,11 +736,11 @@ def _kwarg_description_filepath_parse(*args, **kwargs):
         kwarg pairs:
             target: (learner only)
     """
-    objecty = args[0]
+    object_ = args[0]
 
     default = ""
-    objecty.description_filepath = _dict_value(kwargs, "description_filepath", default)
-    if objecty.description_filepath == default:
+    object_.description_filepath = _dict_value(kwargs, "description_filepath", default)
+    if object_.description_filepath == default:
         logger.warning(
             "No description_filepath instance:, args: {},kwargs: {}".format(
                 args, kwargs
@@ -719,8 +750,117 @@ def _kwarg_description_filepath_parse(*args, **kwargs):
     return True
 
 
+
 ### pasoDecorators class
+# adapted from pands-flavor 11/13/2019
+from pandas.api.extensions import register_dataframe_accessor
+def register_DataFrame_method(method):
+    """Register a function as a method attached to the Pandas DataFrame.
+    Example
+    -------
+    for a function
+        @pf.register_dataframe_method
+        def row_by_value(df, col, value):
+        return df[df[col] == value].squeeze()
+
+    for a class method
+        @pf.register_dataframe_accessor('Aclass')
+        class Aclass(object):
+
+        def __init__(self, data):
+        self._data
+
+        def row_by_value(self, col, value):
+            return self._data[self._data[col] == value].squeeze()
+
+
+    """
+    def inner(*args, **kwargs):
+
+
+        class AccessorMethod(object):
+
+
+            def __init__(self, pandas_obj):
+                self._obj = pandas_obj
+
+            @wraps(method)
+            def __call__(self, *args, **kwargs):
+                return method(self._obj, *args, **kwargs)
+
+        register_dataframe_accessor(method.__name__)(AccessorMethod)
+
+        return method
+
+    return inner()
+
+def check_name_collision(fnames: List[str],class_instance: any) -> bool:
+    """
+
+                list of function names to check if already registered
+            method name of class instance.
+
+
+    Parameters:
+
+        fnames:
+            list of function names to check if already registered
+            method name of class instance.
+
+        class_instance:
+
+    Returns:
+        True if list of ALL function names are NOT  method name of class instance.
+        False if list of ANY one of function names are  method name of class instance.
+
+
+    """
+    state = True
+
+    for fname in fnames:
+        if fname in dir(class_instance):
+            state = False
+            logger.warning('\n function name: {} does Collide in DataFrame namespace'.format(fname))
+        else:
+            logger.info('\n function name: {} does not collide in DataFrame namespace'.format(fname))
+
+    return state
+
 class pasoDecorators:
+
+    def funcwrap():
+        """
+            Hide most of the paso machinery, so that developer focuses on their function or method.
+
+            Parameters: None
+
+                verbose
+
+            return:
+                What the decorated function returns.
+
+        """
+
+        def decorator(fun):
+            # i suppose i could of done @wraos for self, but this works
+            @wraps(fun)
+            def wrapper(*args, **kwargs):
+
+                X = args[0]
+
+                _fun_name = fun.__name__
+                # todo put in decorator
+                if inplace:
+                    X = oX
+                else:
+                    X = oX.copy()
+
+
+                fun(object_, **kwargs)
+
+            return wrapper
+        return decorator
+
     def InitWrap(argyyyy=1):
         """
             Hide most of the paso machinery, so that developer focuses on their function or method.
@@ -736,25 +876,26 @@ class pasoDecorators:
 
         def decorator(fun):
             # i suppose i could of done @wraos for self, but this works
+            @wraps(fun)
             def wrapper(*args, **kwargs):
                 if argyyyy > -1000000:
                     pass  # workaround covage bug
 
-                objecty = args[0]
+                object_ = args[0]
                 # any class can have keyord verbose = (booean)
 
                 default = ""
-                objecty.description_filepath = _dict_value(
+                object_.description_filepath = _dict_value(
                     kwargs, "description_filepath", default
                 )
-                if objecty.description_filepath == default:
+                if object_.description_filepath == default:
                     logger.warning(
                         "No description_filepath instance:, args: {},kwargs: {}".format(
                             args, kwargs
                         )
                     )
 
-                fun(objecty, **kwargs)
+                fun(object_, **kwargs)
 
             return wrapper
 
@@ -769,19 +910,24 @@ class pasoDecorators:
                     Pass a Pandas dataframe (False) or numpy array=True.  Mainly for compatibility
                     with scikit which requires arrays.
 
-            Parm/wrap Class Instance attibutes: these are attibutes of objecty.fun (sef.x) set in this wrapper, if present in Parameter file
+            Parm/wrap Class Instance attibutes: these are attibutes of object_.fun (sef.x) set in this wrapper, if present in Parameter file
 
         """
 
         def decorator(fun):
+            @wraps(fun)
             def wrapper(*args, **kwargs):
-                objecty = _kwargs_parse(*args, **kwargs)
+                _fun_name = fun.__name__
+                object_ = _kwargs_parse(*args, **kwargs)
                 result = _narg_boiler_plate(
-                    objecty, 1, _Check_No_NAs, fun, array, *args, **kwargs
+                    object_, 1, _Check_No_NAs, fun, array, *args, **kwargs
                 )
                 # post
-                objecty.transformed = True
-                objecty.trained = True
+                if object_.verbose:
+                    logger.info('{} invoked'.forma(_fun_name))
+
+                object_.transformed = True
+                object_.trained = True
                 return result
 
             return wrapper
@@ -797,19 +943,23 @@ class pasoDecorators:
                     Pass a Pandas dataframe (False) or numpy array=True.  Mainly for compatibility
                     with scikit which requires arrays.
 
-            Parm/wrap Class Instance attibutes: these are attibutes of objecty.fun (sef.x) set in this wrapper, if present in Parameter file
+            Parm/wrap Class Instance attibutes: these are attibutes of object_.fun (sef.x) set in this wrapper, if present in Parameter file
 
         """
 
         def decorator(fun):
+            @wraps(fun)
             def wrapper(*args, **kwargs):
-                objecty = _kwargs_parse(*args, **kwargs)
+                _fun_name = fun.__name__
+                object_ = _kwargs_parse(*args, **kwargs)
                 result = _narg_boiler_plate(
-                    objecty, 2, _Check_No_NAs, fun, array, *args, **kwargs
+                    object_, 2, _Check_No_NAs, fun, array, *args, **kwargs
                 )
                 # post
-                objecty.transformed = True
-                objecty.trained = True
+                object_.transformed = True
+                object_.trained = True
+                if object_.verbose:
+                    logger.info('{} invoked'.forma(_fun_name))
                 return result
 
             return wrapper
@@ -827,22 +977,26 @@ class pasoDecorators:
                     Pass a Pandas dataframe (False) or numpy array=True.  Mainly for compatibility
                     with scikit which requires arrays.
 
-            Parm/wrap Class Instance attibutes: these are attibutes of objecty.fun (sef.x) set in this wrapper, if present in Parameter file
+            Parm/wrap Class Instance attibutes: these are attibutes of object_.fun (sef.x) set in this wrapper, if present in Parameter file
 
         """
 
         def decorator(fun):
+            @wraps(fun)
             def wrapper(*args, **kwargs):
-                # if kwarg_description_filepath_parse:
-                #     _kwarg_description_filepath_parse(*args, **kwargs)
-                objecty = _kwargs_parse(*args, **kwargs)
+                _fun_name = fun.__name__
+
+                object_ = _kwargs_parse(*args, **kwargs)
                 result = _narg_boiler_plate(
-                    objecty, 3, _Check_No_NAs, fun, array, *args, **kwargs
+                    object_, 3, _Check_No_NAs, fun, array, *args, **kwargs
                 )
                 # post
-                objecty.transformed = True
-                objecty.trained = True
+                object_.transformed = True
+                object_.trained = True
+                if object_.verbose:
+                    logger.info('{} invoked'.format(_fun_name))
                 return result
+
 
             return wrapper
 
@@ -862,12 +1016,14 @@ class pasoDecorators:
 
         def decorator(fun):
             # i suppose i could of done @wraos for self, but this works
+            @wraps(fun)
             def wrapper(*args, **kwargs):
-                objecty = args[0]
-                if not objecty.trained:
+                _fun_name = fun.__name__
+                object_ = args[0]
+                if not object_.trained:
                     raise_PasoError("Train must be called before predict")
-                objecty.measure = _dict_value2(
-                    kwargs, objecty.description_kwargs, "measure", ""
+                object_.measure = _dict_value2(
+                    kwargs, object_.description_kwargs, "measure", ""
                 )
                 if len(args) != narg:
                     raise_PasoError(
@@ -875,12 +1031,12 @@ class pasoDecorators:
                     )
                 if len(args) >= 2:
                     Xarg = args[1]
-                if objecty.trained == False:
+                if object_.trained == False:
                     raisePasoErrorPasoError(
                         "Predict:Must call train before predict.", args, kwargs
                     )
                 # must be dataFrame
-                if is_DataFrame(Xarg):
+                if isDataFrame(Xarg):
                     pass
                 else:
                     raisePasoErrorraise_PasoError(
@@ -893,11 +1049,14 @@ class pasoDecorators:
                 _Check_No_NA_Values(Xarg)
 
                 if array:
-                    result = fun(objecty, Xarg.to_numpy(), **kwargs)
+                    result = fun(object_, Xarg.to_numpy(), **kwargs)
                 else:
-                    result = fun(objecty, Xarg, **kwargs)
+                    result = fun(object_, Xarg, **kwargs)
 
-                objecty.predicted = True
+                if object_.verbose:
+                    logger.info('{} invoked'.forma(_fun_name))
+
+                object_.predicted = True
                 return result
 
             return wrapper
@@ -1195,9 +1354,9 @@ class Paso(object):
             pipe (list of tuple): (node_name,shape,edge_label
 
             Returns:
-                graph (pydot.Dot): objecty representing upstream pipeline paso(es).
+                graph (pydot.Dot): object_ representing upstream pipeline paso(es).
         """
-        graph = self._pasoLine_DAG(__PiPeLiNeS__)
+        graph = self._pasoLine_DAG(_PiPeLiNeS_)
         plt = Image(graph.create_png())
         display(plt)
         return self
@@ -1212,9 +1371,9 @@ class Paso(object):
             filepath (str): filepath to which the png with pipeline visualization should be persisted
 
         Returns:
-            graph (pydot.Dot): objecty representing upstream pipeline paso(es).
+            graph (pydot.Dot): object_ representing upstream pipeline paso(es).
         """
-        graph = self._pasoLine_DAG(__PiPeLiNeS__)
+        graph = self._pasoLine_DAG(_PiPeLiNeS_)
         graph.write(filepath, format="png")
         return self
 
@@ -1226,7 +1385,7 @@ class Paso(object):
             pipe (list of tuple): (node_name,shape,edge_label
 
         Returns:
-            graph (pydot.Dot): objecty representing upstream pipeline paso(es).
+            graph (pydot.Dot): object_ representing upstream pipeline paso(es).
 
         """
         graph = pydot.Dot()
@@ -1254,10 +1413,10 @@ class pasoBase(ABC):
     a building block for a data analytics pipeline or any pipeline of
     computation that can be specified as a directed acyclic graph(DAG).
 
-    **paso** has these key objectyives:
+    **paso** has these key object_ives:
 
     Simplicity:
-        for now this means objecty-oriented with as few as attributes as possible
+        for now this means object_-oriented with as few as attributes as possible
         and a standard set of a few method calls.  You have a choice, though the
         common parameter ``inplace``, to transform or not change input arguments.
         the latter promotes a functional model that lends itself to high parallelism.
@@ -1286,7 +1445,7 @@ class pasoBase(ABC):
 
             - ``load`` retrieves the model, usally the weights, ``w``,from permanent storage. Optionally ``filepath`` maybe given to access a specific named file.
 
-            - ``reset`` Reset **paso** objecty to default state.
+            - ``reset`` Reset **paso** object_ to default state.
 
     **Class pasoFuctionBase Methods**:
 
@@ -1604,104 +1763,6 @@ class pasoModel(pasoBase):
         raise NotImplementedError
 
 
-### toDataFrame class
-# makes no sense to save,load or persist toDataframe
-class toDataFrame(pasoFunction):
-    """
-    A paso to transform a  list, tuple, numpy 1-D or 2-D array, or Series
-    into a pandas DataFrame.
-    Usually used to transform a paso numpy array into a Dataframe.
-
-    Parameters:
-        None
-
-    Example:
-
-        >>> toDataFrame(df)
-
-    """
-
-    def __init__(self, verbose=True):
-        super().__init__()
-
-    def transform(self, Xarg, labels=[], **kwargs):
-        """
-        Transform a list, tuple, numpy 1-D or 2-D array, or pandas Series  into a  DataFrame.
-
-        Parameters:
-            Xarg: (list, tuple, numpy 1-D or 2-D array, pandas Serieandas dataFrame, pandas dataFrame)
-
-            labels: (single feature name strings or list of feature name strings):
-                The column labels name to  be used for new DataFrame.
-                If number of column names given is less than number of column names needed,
-                then they will generared as Column_0...Column_n, where n is the number of missing column names.
-
-            inplace: boolean, (CURRENTLY IGNORED)
-                Xarg is type DataFrame then return Xarg , inplace = True
-                Xarg is NOT type DataFrame then return a created Dataframe made from Xarg , inplace = False
-
-                    False (, replace 1st argument with resulting dataframe
-                    True:  (boolean) ALWAYS False
-
-        Note:
-            A best practice is to make your dataset of type ``DataFrame`` at the start of your pipeline
-            and keep the orginal DataFrame thoughout the pipeline of your experimental run to maximize
-            speed of completion and minimize memory usage, THIS IS NOT THREAD SAFE.
-
-            Almost all **paso** objects call ``toDataFrame(argument)`` ,which if argument
-            is of type ``DataFrame``is very about 500x faster, or about 2 ns  for ``inplace=False``
-            for single thread for a 1,000,000x8 DataFrame.
-
-            If input argument is of type DataFrame,
-            the return will be passed DataFrame as if `inplace=True```and ignores ``labels``
-
-            If other than of type ``DataFrame`` then  `inplace=False``, and  `inplace`` is ignored
-            and only remains for backwaeds compatability.
-
-        Returns: (pandas DataFrame)
-
-        Raises:
-            1. ValueError will result of unknown argument type.
-            2. ValueError will result if labels is not a string or list of strings.
-       """
-
-        if is_DataFrame(Xarg):
-            self.transformed = True
-            self.f_x = Xarg
-            return Xarg  # new labels not set on inplace DataFrame, inplace ignored
-        # for now inplace ignored
-        X = Xarg.copy()
-        if len(X) == 0:
-            raise_PasoError(
-                "toDataFrame:transform:X: is of length O: {} ".format(str(type(X)))
-            )
-
-        self.labels = labels
-
-        if is_Series(X):
-            pass
-        elif type(X) == np.ndarray:
-            if X.ndim != 2:
-                raise_PasoError(
-                    "toDataFrame:transform:np.array X: wrong imension. must be 2: {} ".format(
-                        str(X.ndim)
-                    )
-                )
-            if labels == []:
-                for i in range(X.shape[1]):
-                    self.labels.append("c_" + str(i))
-        elif type(X) == tuple or type(X) == list:
-            # if someone passes a nested list or tuple of labels, well i am nt going to check
-            self.labels = ["c_0"]
-        else:
-            raise raise_PasoError(
-                "S_toDataFrame:transform:X: is of wrong type: {} ".format(str(type(X)))
-            )
-
-        X = pd.DataFrame(X)
-        self.transformed = True
-        return _new_feature_names(X, self.labels)
-
 
 @jit
 def _time_required(func):
@@ -1753,7 +1814,7 @@ def dask_pandas_startup_ratio(magnitude=1):
     for power in tqdm(range(magnitude)):
         scale = 10 ** power
         bc = pd.concat([City for i in range(int(1.5 * scale))], axis=0)
-        if self.verbose:
+        if object_.verbose:
             logger.info((type(bc), bc.shape, bc.shape[0] * bc.shape[1]))
         N = mp.cpu_count()  # theads on this machine
         bcd = pdd.from_pandas(bc, npartitions=N)
