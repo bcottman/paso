@@ -1,11 +1,17 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+__author__ = "Bruce_H_Cottman"
+__license__ = "MIT License"
+
 from pandas.util._validators import validate_bool_kwarg
 import warnings
 
 warnings.filterwarnings("ignore")
 
+from typing import  List  #,Dict
 import numpy as np
+import pandas as pd
 
 # sklearn imports
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -33,109 +39,24 @@ from paso.base import pasoModel, PasoError
 from paso.base import toDataFrame, pasoDecorators
 from loguru import logger
 
-__author__ = "Bruce_H_Cottman"
-__license__ = "MIT License"
-
-#######
-
-
-class EmbeddingVectorEncoder(BaseEstimator, TransformerMixin):
-    """
-
-    Attributes:
-        None
-    """
-
-    def __init__(self):
-        self.coefs_ = []  # Store tau for each transformed variable
-
-    #        self.verbose = verbose
-
-    def _reset(self):
-        self.coefs_ = []  # Store tau for each transformed variable
-
-    def fit(self, X, **kwargs):
-        return self.train(X, **kwargs)
-
-    def train(self, X, inplace=False, **kwargs):
-        """
-        Args:
-            X (dataframe):
-                Calculates BoxCox coefficients for each column in X.
-            
-        Returns:
-            self (model instance)
-        
-        Raises:
-            ValueError will result of not 1-D or 2-D numpy array, list or Pandas Dataframe.
-            
-            ValueError will result if has any negative value elements.
-            
-            TypeError will result if not float or integer type.
-
-        """
-
-        for x_i in X.T:
-            self.coefs_.append(boxcox(x_i)[1])
-        return self
-
-    def transform(self, X, **kwargs):
-        return self.predict(X, **kwargs)
-
-    def predict(self, X, inplace=False, **kwargs):
-        # todo: transform dataframe to numpy and back?
-        """
-        Transform data using a previous ``.fit`` that calulates BoxCox coefficents for data.
-                
-        Args:
-            X (np.array):
-                Transform  numpy 1-D or 2-D array distribution by BoxCoxScaler.
-
-        Returns:
-            X (np.array):
-                tranformed by BoxCox
-
-        """
-
-        return np.array(
-            [boxcox(x_i, lmbda=lmbda_i) for x_i, lmbda_i in zip(X.T, self.coefs_)]
-        ).T
-
-    # is there a way to specify with step or does does step need enhancing?
-    def inverse_transform(self, y):
-        """
-        Recover original data from BoxCox transformation.
-        """
-
-        return np.array(
-            [
-                (1.0 + lmbda_i * y_i) ** (1.0 / lmbda_i)
-                for y_i, lmbda_i in zip(y.T, self.coefs_)
-            ]
-        ).T
-
-    def inverse_predict(self, y, inplace=False):
-        """
-        Args:
-            y: dataframe
-
-        Returns:
-            Dataframe: Recover original data from BoxCox transformation.
-        """
-        return self.inverse_transform(y)
-
 
 ########
-class EncoderVariables(object):
+
+class Encoders(pasoModel):
     """
-    Holds class variables
+    Parameters:
+        encoderKey: (str) One of Encoder.encoders()
+
+        verbose: (str) (default) True, logging off (``verbose=False``)
+
+    Note:
+        **Encode**
     """
+    _category_encoders__version_ = "2.0.0"
 
-    _category_encoders__version__ = "2.0.0"
+    _encoders_ = {}
 
-    Encoder_Dict = {}
-
-    category_encoders__all__ = [
+    _category_encoders_ = [
         "BackwardDifferenceEncoder",
         "BinaryEncoder",
         "HashingEncoder",
@@ -152,31 +73,27 @@ class EncoderVariables(object):
         "JamesSteinEncoder",
         "CatBoostEncoder",
     ]
-class Encoders(pasoModel):
-    """
-    Parameters:
-        encoderKey: (str) One of Encoder.encoders()
 
-        verbose: (str) (default) True, logging off (``verbose=False``)
+    @pasoDecorators.InitWrap()
+    def __init__(self, **kwargs):
 
-    Note:
-        **Encode**
-    """
+        """
+        Parameters:
+            modelKey: (str) On
+            verbose: (str) (default) True, logging off (``verbose=False``)
 
-    def __init__(self, encoderKey=None, verbose=False, *args, **kwargs):
+        Note:
+
+        """
         super().__init__()
-        if encoderKey in EncoderVariables.Encoder_Dict:
-            Encoder = EncoderVariables.Encoder_Dict[encoderKey](*args)
-        else:
-            logger.error("paso:encoder: No Encoder named: {} found.".format(encoderKey))
-            raise PasoError()
+        self.debug = True
+        self.model = None
+        self.model_name = None
+        self.trained
+        self.predicted = False
 
-        self.encoderKey = encoderKey
-        self.model = Encoder
-        validate_bool_kwarg(verbose, "verbose")
-        self.verbose = verbose
 
-    def encoders(self):
+    def encoders(self) -> List:
         """
         Parameters:
             None
@@ -184,28 +101,57 @@ class Encoders(pasoModel):
         Returns:
             List of available encoders names.
         """
-        return list(EncoderVariables.Encoder_Dict.keys())
+        return [k for k in Encoders._category_encoders_.keys()]
 
-    @pasoDecorators.TrainWrap(array=True)
-    def train(self, X, inplace=False, **kwargs):
+    @pasoDecorators.TTWrap(array=True)
+    def train(self, X: pd.DataFrame, verbose: bool = True, **kwargs):
         """
-
         Parameters:
-            Xarg:  pandas dataFrame #Todo:Dask numpy
+            X:  pandas dataFrame, that encompasses all values encoded
 
-            inplace: (CURRENTLY IGNORED)
-                    False (boolean), replace 1st argument with resulting dataframe
-                    True:  (boolean) ALWAYS False
+            verbose:
+
         Returns:
             self
+
+        Note: so complete dataset has same .fit instance, tran,valid, test and
+        any other subsets should be merged and passed as X.
+
+        Note: Do not include target in dataset as it must not be encoded.
+
+        Note Encoding not required for tree-based learners  (RF, xgboost ,etc,).
+        In some cases, encoding might make tree-base learner training
+        and prediction worse.
         """
 
-        self.model.fit(X, **kwargs)
+        # currently support only one learner, very brittle parser
+        if self.kind == {}:
+            raise_PasoError(
+                "keyword kind must be present at top level:{}:".format(
+                    self.kind
+                )
+            )
+
+        if self.kind_name not in Encoders._encoders_:
+            raise_PasoError(
+                "Train; no operation named: {} in encoder;: {}".format(
+                    self.kind_name, Encoders._encoders_.keys()
+                )
+            )
+        else:
+            self.model_name = self.kind_name
+            self.model = Encoders._encoders_[self.kind_name](
+                **self.kind_name_kwargs
+            )
+            self.model.fit(X)
+
+        self.trained = True
 
         return self
 
     @pasoDecorators.PredictWrap(array=False)
-    def predict(self, X, inplace=False, **kwargs):
+    def predict(self, X: pd.DataFrame, inplace:bool=False, **kwargs) -> pd.DataFrame:
+
         """
         Parameters:
             X:  pandas dataFrame #Todo:Dask numpy
@@ -216,12 +162,19 @@ class Encoders(pasoModel):
             
         Returns:
             (DataFrame): transform X
+
+        Note: once .train is called on entire dataset subsets(train,valid, test)
+        predict can be called separately for each subset.
+
+        Note: Do not include target in dataset as it must not be encoded.
+
         """
 
-        self.f_x = self.model.transform(X, **kwargs)
-        return self.f_x
+        self.predicted = True
 
-    def inverse_predict(self, Xarg, inplace=False, **kwargs):
+        return self.model.transform(X, **kwargs)
+
+    def inverse_predict(self, X: pd.DataFrame, inplace=False, **kwargs)-> pd.DataFrame:
         """
         Args:
             Xarg (array-like): Predictions of different models for the labels.
@@ -272,9 +225,95 @@ class Encoders(pasoModel):
         raise PasoError()
 
 
+class EmbeddingEncoder(BaseEstimator, TransformerMixin):
+    """
+
+    Attributes:
+        None
+    """
+
+    def __init__(self):
+        self.coefs_ = []  # Store tau for each transformed variable
+
+    #        self.verbose = verbose
+
+    def _reset(self):
+        self.coefs_ = []  # Store tau for each transformed variable
+
+    def fit(self, X, **kwargs):
+        return self.train(X, **kwargs)
+
+    def train(self, X, inplace=False, **kwargs):
+        """
+        Args:
+            X (dataframe):
+                Calculates BoxCox coefficients for each column in X.
+
+        Returns:
+            self (model instance)
+
+        Raises:
+            ValueError will result of not 1-D or 2-D numpy array, list or Pandas Dataframe.
+
+            ValueError will result if has any negative value elements.
+
+            TypeError will result if not float or integer type.
+
+        """
+
+        for x_i in X.T:
+            self.coefs_.append(boxcox(x_i)[1])
+        return self
+
+    def transform(self, X, **kwargs):
+        return self.predict(X, **kwargs)
+
+    def predict(self, X, inplace=False, **kwargs):
+        # todo: transform dataframe to numpy and back?
+        """
+        Transform data using a previous ``.fit`` that calulates BoxCox coefficents for data.
+
+        Args:
+            X (np.array):
+                Transform  numpy 1-D or 2-D array distribution by BoxCoxScaler.
+
+        Returns:
+            X (np.array):
+                tranformed by BoxCox
+
+        """
+
+        return np.array(
+            [boxcox(x_i, lmbda=lmbda_i) for x_i, lmbda_i in zip(X.T, self.coefs_)]
+        ).T
+
+    # is there a way to specify with step or does does step need enhancing?
+    def inverse_transform(self, y):
+        """
+        Recover original data from BoxCox transformation.
+        """
+
+        return np.array(
+            [
+                (1.0 + lmbda_i * y_i) ** (1.0 / lmbda_i)
+                for y_i, lmbda_i in zip(y.T, self.coefs_)
+            ]
+        ).T
+
+    def inverse_predict(self, y, inplace=False):
+        """
+        Args:
+            y: dataframe
+
+        Returns:
+            Dataframe: Recover original data from BoxCox transformation.
+        """
+        return self.inverse_transform(y)
+
 ########
+
 # initilize wth all encoders
-for encoder in EncoderVariables.category_encoders__all__:
-    EncoderVariables.Encoder_Dict[encoder] = eval(encoder)
+for encoder in Encoders._category_encoders_:
+    Encoders._encoders_[encoder] = eval(encoder)
 # add new encoders
-EncoderVariables.Encoder_Dict["EmbeddingVectorEncoder"] = EmbeddingVectorEncoder
+Encoders._encoders_["EmbeddingEncoder"] = EmbeddingEncoder

@@ -1,5 +1,31 @@
 # paso changelog
 
+## 0.5.2
+
+2019-11-17
+
+### Added
+
+- add type hints
+- add doc Learners
+- refactor Encoders
+- add Encoders.category_encoder_embedded
+- add Learner.tune_hyperparameters
+- add to_util.py and refactor to function from class toX
+- add method call to dataframe for cleaners and to_util.py
+- add selected pyanitor functions to clean
+
+## 0.5.1
+
+2019-11-07
+
+### Added
+- refactored Cleaners
+- added to cleaner test
+- added cross-validation test
+- added lesson 2
+
+
 ## 0.5.0
 
 2019-08-28
@@ -15,7 +41,7 @@
 - refactored learners.py
 - added cross-validation to learners.py
 - added predict, predicta, evaluate learners.py
-- addeded hyperopt for hyperparamer tuning to learners.py
+- added hyperopt for hyperparamer tuning to learners.py
 - added to test_learners.py
 - refactored encoders..py
 - added to test_encoders.py

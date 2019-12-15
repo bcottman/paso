@@ -6,3 +6,15 @@ paso.viz package
     :undoc-members:
     :show-inheritance:
 
+Submodules
+----------
+
+paso.viz.EDA module
+-------------------
+
+.. automodule:: paso.viz.EDA
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+

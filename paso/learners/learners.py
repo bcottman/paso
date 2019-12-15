@@ -1,9 +1,14 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+__author__ = "Bruce_H_Cottman"
+__license__ = "MIT License"
+
 from typing import Dict, List
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import rcParams
+import pandas as pd
+#import matplotlib.pyplot as plt
+#from matplotlib import rcParams
 
 # from tqdm import tqdm
 
@@ -25,12 +30,6 @@ from paso.base import raise_PasoError, _exists_as_dict_value, _divide_dict
 from paso.base import _array_to_string, pasoDecorators
 from paso.base import _add_dicts, _merge_dicts
 
-
-# from paso.base import _dict_value2
-from loguru import logger
-
-__author__ = "Bruce_H_Cottman"
-__license__ = "MIT License"
 # class Learner
 class Learners(pasoModel):
     """
@@ -77,8 +76,6 @@ class Learners(pasoModel):
         self.dataset_name = None
         self.model_name = None
         self.model_type = None
-        #        self.n_early_stopping = 10
-        #        self.metric_optimize = "f1_score"
         self.inputed = False
         self.cleaned = False
         self.cleaned_booleans = False
@@ -90,20 +87,13 @@ class Learners(pasoModel):
         self.evaluated = False
         self.metrics = None
         self.metrics_scoring = None
-        # {
-        #     k: make_scorer(v[0], **v[1])
-        #     for k, v in NameToClass.__metrics__["Classification"].items()
-        # }
         self.metrics_names = None
-        # [
-        #     k for k in NameToClass.__metrics__["Classification"].keys()
-        # ]
         self.cross_validated = False
         self.tuned_parameters = False
 
 
     @staticmethod
-    def learners(self):
+    def learners():
         """
         Parameters:
             None
@@ -114,7 +104,7 @@ class Learners(pasoModel):
         return [k for k in NameToClass.__learners__.keys()]
 
     @pasoDecorators.TTWrapXy(array=False)
-    def train(self, X, y, **kwargs):
+    def train(self, X: pd.DataFrame, y: np.ndarray, **kwargs):
         # Todo:Rapids numpy
         """
         Parameters:
@@ -127,7 +117,7 @@ class Learners(pasoModel):
         if self.kind == {}:
             raise_PasoError(
                 "keyword kind must be present at top level:{}:".format(
-                    self.ontology_kwargs
+                    self.kind
                 )
             )
 
@@ -149,13 +139,13 @@ class Learners(pasoModel):
 
         return self
 
-    def predict(self, X):
+    def predict(self, X:pd.DataFrame) -> np.ndarray:
         """
         parameters:
-            X: (DataFrame\) column(s) are independent features of dataset
+            X: DataFrame column(s) are independent features of dataset
 
         Returns:
-            y_pred: (numpy vector of ints)  predicted target.
+            y_pred: numpy array,  predicted target.
 
         Warning:
             Assumes train has been called.
@@ -168,7 +158,7 @@ class Learners(pasoModel):
         self.predicted = True
         return self.model.predict(X)
 
-    def predict_proba(self, X):
+    def predict_proba(self, X: pd.DataFrame)-> np.ndarray:
         """
         parameters:
             X: (DataFrame\) column(s) are independent features of dataset
@@ -186,7 +176,7 @@ class Learners(pasoModel):
         self.predicted_proba = True
         return self.model.predict_proba(X)
 
-    def _parse_metrics(self, y, **kwargs):
+    def _parse_metrics(self, y: np.ndarray, **kwargs):
         """"
         pasre the metics dict
 
@@ -241,14 +231,25 @@ class Learners(pasoModel):
         return self
 
     @pasoDecorators.TTWrapXy(array=False)
-    def evaluate(self, X, y, **kwargs):
+    def evaluate(self, X: pd.DataFrame, y: np.ndarray, **kwargs) -> Dict:
         """
         Parameters:
             X: (DataFrame\) column(s) are independent features of dataset
             y: (numpy vector )  target or dependent feature of dataset.
 
         Returns:
-            {'f1_score': value, 'logloss': value}
+            dict: dict of metrics
+            ex:
+
+            {'confusion_matrix': array([[388,   9],
+                    [ 16,  33]]),
+             'brier_loss': 0.0,
+             'logloss': 0.1360347259659083,
+             'accuracy': 0.9439461883408071,
+             'precision': 0.873055162659123,
+             'recall': 0.8253996812830926,
+             'f1': 0.8470318695037796,
+             'AOC': 0.8253996812830926}
 
         """
 
@@ -289,7 +290,7 @@ class Learners(pasoModel):
         return self.metrics
 
     @staticmethod
-    def cross_validaters(self):
+    def cross_validaters() -> List:
         # Todo:Rapids numpy
         """
         Parameters:
@@ -301,7 +302,7 @@ class Learners(pasoModel):
         return [k for k in NameToClass.__cross_validators__.keys()]
 
     @pasoDecorators.TTWrapXy(array=False)
-    def cross_validate(self, X, y, **kwargs):
+    def cross_validate(self, X: pd.DataFrame, y: np.ndarray, **kwargs) -> Dict:
         # Todo:Rapids numpy
         """
         Parameters:
@@ -309,7 +310,28 @@ class Learners(pasoModel):
             y: (numpy vector )  target or dependent feature of dataset.
             cv_description_filepath:    str
         Returns: d
-            dict: statistics of metrics
+            dict: statistics of dict of metrics
+            ex:
+            {'mean': {'fit_time': 0.47127442359924315,
+              'score_time': 0.6575253486633301,
+              'test_AOC': 0.9740188014101058,
+              'test_accuracy': 0.9740188014101058,
+              'test_f1_score': 0.9740188014101058,
+              'test_precision': 0.9740188014101058,
+              'test_recall': 0.9740188014101058,
+              'test_logloss': -0.08630526290291975},
+             'median': {'fit_time': 0.4730620384,
+             .
+             .
+             .
+             'var': {'fit_time': 1.0282657726747856e-05,
+              'score_time': 3.292675623924879e-06,
+              'test_AOC': 0.00014246376351316793,
+              'test_accuracy': 0.00014246376351316855,
+              'test_f1_score': 0.00014246376351316855,
+              'test_precision': 0.00014246376351316855,
+              'test_recall': 0.00014246376351316855,
+              'test_logloss': 0.0005022676227615732}}
         """
         if self.cv_description_filepath == "":
             raise_PasoError(

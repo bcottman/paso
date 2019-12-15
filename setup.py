@@ -2,8 +2,8 @@ from setuptools import setup,find_packages
 
 setup(name='paso',
       packages=find_packages(),
-      version='0.5.0',
-      description='A python package for structured data machine learning and deep learning.',
+      version='0.5.2',
+      description='A python package for the entire data machine learning pipeline',
       long_description= """
 **paso** is a set of function and class method operations for data wrangling Machine
 for Learning and Deep Learning models.

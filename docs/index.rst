@@ -11,7 +11,7 @@ Welcome to paso
    nbdoc/Contributing
    nbdoc/FAQ
    source/modules.rst
-   source/CHANGELOG.rst
+   source/CHANGELOG.md
 
 
 

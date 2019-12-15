@@ -232,7 +232,7 @@ class Inputers(pasoFunction):
         self.input_data_set = False
 
     @staticmethod
-    def inputers(self):
+    def inputers():
         """
         Parameters:
             None
@@ -243,7 +243,7 @@ class Inputers(pasoFunction):
         return [k for k in Inputers._inputer_.keys()]
 
     @staticmethod
-    def formats(self):
+    def formats():
         """
         Parameters:
             None
@@ -254,7 +254,7 @@ class Inputers(pasoFunction):
         return [k for k in Inputers._formats_.keys()]
 
     @staticmethod
-    def datasets(self):
+    def datasets():
         """
         List type of files available
 
