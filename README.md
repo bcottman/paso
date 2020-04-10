@@ -1,3 +1,5 @@
+# Warning: **paso** is merging with repo https://github.com/bcottman/photon
+Do not expect any point release or gug fixes oon **paso**
 # paso
 [![GitHub release](https://img.shields.io/github/release/Naereen/StrapDown.js.svg)](https://GitHub.com/Naereen/StrapDown.js/releases/)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
@@ -16,7 +18,7 @@
 [![made-with-sphinx-doc](https://img.shields.io/badge/Made%20with-Sphinx-1f425f.svg)](https://www.sphinx-doc.org/)
 [![PyPI download month](https://img.shields.io/pypi/dm/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 
-Warning: **paso** is merging with repo
+
 
 **paso** is  a python package for structured data machine learning. **paso** is Spanish for the English word step. 
 A **paso** class or function is a step in your analysis pipeline. 
