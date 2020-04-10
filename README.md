@@ -16,6 +16,8 @@
 [![made-with-sphinx-doc](https://img.shields.io/badge/Made%20with-Sphinx-1f425f.svg)](https://www.sphinx-doc.org/)
 [![PyPI download month](https://img.shields.io/pypi/dm/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 
+Warning: **paso** is merging with repo
+
 **paso** is  a python package for structured data machine learning. **paso** is Spanish for the English word step. 
 A **paso** class or function is a step in your analysis pipeline. 
 Because **paso** follows a protocol, the set of all operations in **paso** 
