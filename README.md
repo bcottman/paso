@@ -1,5 +1,5 @@
 # Warning: **paso** is merging with repo https://github.com/bcottman/photon
-Do not expect any point release or gug fixes oon **paso**
+Do not expect any point release or bug fixes on **paso**
 # paso
 [![GitHub release](https://img.shields.io/github/release/Naereen/StrapDown.js.svg)](https://GitHub.com/Naereen/StrapDown.js/releases/)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
